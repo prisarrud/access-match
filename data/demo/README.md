@@ -17,12 +17,11 @@ Use caminhos relativos a `data/demo`, com barras `/`. Os IDs de fotos e document
 
 O FastAPI lê e valida o catálogo na inicialização, independentemente do diretório de execução. Se o arquivo estiver ausente, o catálogo começa vazio. Formato inválido e IDs duplicados geram um erro com o caminho do catálogo e o detalhe da validação.
 
-Com Python 3.11 ou superior e um ambiente virtual ativo, instale as dependências e valide o catálogo a partir da raiz do repositório.
+Configure o ambiente virtual conforme o [README do projeto](../../README.md#getting-started---api). Depois, execute os comandos abaixo na raiz do repositório.
 
 ```bash
-python -m pip install -r apps/api/requirements.txt
-PYTHONPATH=apps/api python -c 'from app.properties.catalog import load_catalog; print(len(load_catalog().properties))'
-PYTHONPATH=apps/api python -m unittest discover -s apps/api/tests
+api/.venv/bin/python -c 'from api.app.properties.catalog import load_catalog; print(len(load_catalog().properties))'
+api/.venv/bin/python -m unittest discover -s api/tests
 ```
 
 <details>

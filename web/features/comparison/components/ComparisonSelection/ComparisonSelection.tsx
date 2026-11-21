@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import {
   hasTwoPropertyIds, loadProperties, PropertyComparison, propertyQueryParam,
 } from '@/features/property-access-comparison'
 import { readComparisonSubmission } from '../../utils'
 import { ComparisonCriteriaForm } from '../ComparisonCriteriaForm'
+import { ComparisonResults } from '../ComparisonResults'
 
 type ComparisonSelectionProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -37,10 +39,19 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
     return <p className='notice'>Um ou mais imóveis da seleção não estão no catálogo.</p>
   }
 
+  const submission = readComparisonSubmission(ids, params)
+
   return (
     <>
       <PropertyComparison properties={[first, second]} />
-      <ComparisonCriteriaForm propertyIds={ids} submission={readComparisonSubmission(ids, params)} />
+
+      <ComparisonCriteriaForm propertyIds={ids} submission={submission} />
+
+      {submission.status === 'valid' && (
+        <Suspense fallback={<p className='notice' role='status'>Analisando as fontes da comparação…</p>}>
+          <ComparisonResults request={submission.request} />
+        </Suspense>
+      )}
     </>
   )
 }

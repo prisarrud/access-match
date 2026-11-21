@@ -24,6 +24,26 @@ ENTRANCE_DOOR_BEFORE_MEASURE = re.compile(
     r"(?:(?!\bporta\b|\b\d+\.\d+\s).)*$"
 )
 
+CRITERION_GUIDANCE = {
+    "largura": (
+        'Para largura, considere a passagem livre da porta de entrada de pedestres. Se o anúncio\n'
+        'disser apenas "porta ampla", preserve a declaração qualitativa com valor e unidade nulos.'
+    ),
+    "degraus": (
+        "Procure afirmações explícitas sobre presença ou ausência de degraus, escadas, desníveis, "
+        "ressaltos ou soleiras no acesso. Ignore medidas de largura das portas e descrições de acabamentos."
+    ),
+    "rampas": (
+        "Procure afirmações explícitas sobre rampas ou superfícies inclinadas de passagem no acesso. "
+        "Ignore medidas de largura das portas e descrições de piso, corrimão ou patamar sem indicação de rampa."
+    ),
+}
+
+CRITERION_TERMS = {
+    "degraus": re.compile(r"\b(?:degraus?|escadas?|escadarias?|desníve(?:l|is)|ressaltos?|soleiras?)\b"),
+    "rampas": re.compile(r"\b(?:rampas?|aclives?|declives?|inclinad[oa]s?|inclinaç(?:ão|ões))\b"),
+}
+
 PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
 Você extrai evidências sobre acessibilidade da calçada até a porta de entrada de pedestres.
@@ -33,8 +53,7 @@ Copie source_id e nature exatamente da entrada citada. Use o local descrito na f
 Em quote, copie um trecho literal que sustente o fato e seu local, incluindo o título da
 seção se ele identificar a porta. Em value e unit, copie o número e a unidade da medida,
 sem conversão. Para uma declaração qualitativa, use null em ambos os campos.
-Para largura, considere a passagem livre da porta de entrada de pedestres. Se o anúncio
-disser apenas "porta ampla", preserve a declaração qualitativa com valor e unidade nulos.
+{guidance}
 Marque scope como entrada para a porta de entrada e percurso para o trajeto externo até ela.
 Para outras portas, use outra_porta, e para locais sem identificação suficiente, use ambiguo.
 Você pode omitir observações fora do escopo. Se não houver evidência, retorne observations vazio.
@@ -139,18 +158,24 @@ def validate_observations(
     seen = set()
 
     for item in extraction.observations:
+        if item.criterion != criterion:
+            continue
+
         source = sources_by_id.get(item.source_id)
 
         if source is None:
             raise ExtractionError(f"Unknown evidence source: {item.source_id!r}.")
 
-        if item.criterion != criterion or item.nature != source.nature:
-            raise ExtractionError("The model returned a mismatched criterion or source nature.")
-
         if item.scope in {"outra_porta", "ambiguo"} or (criterion == "largura" and item.scope != "entrada"):
             continue
 
         quote = " ".join(item.quote.split()).casefold()
+
+        terms = CRITERION_TERMS.get(criterion)
+
+        if terms is not None and not terms.search(quote):
+            continue
+
         source_text = " ".join(source.text.split()).casefold()
         offsets = [match.start() for match in re.finditer(re.escape(quote), source_text)]
 
@@ -195,7 +220,10 @@ def validate_observations(
         key = (item.source_id, quote, item.value, item.unit)
 
         if key not in seen:
-            observations.append(GroundedObservation(**item.model_dump(), source=source))
+            observations.append(GroundedObservation(
+                **item.model_dump(exclude={"nature"}), nature=source.nature, source=source,
+            ))
+
             seen.add(key)
 
     return observations
@@ -217,6 +245,7 @@ async def extract_evidence(
 
         extracted = await chain.ainvoke({
             "criterion": criterion,
+            "guidance": CRITERION_GUIDANCE[criterion],
             "sources": json.dumps([
                 source.model_dump(include={"source_id", "nature", "text"}) for source in sources
             ], ensure_ascii=False),

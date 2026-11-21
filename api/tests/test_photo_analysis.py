@@ -84,6 +84,7 @@ class PhotoAnalysisTests(IsolatedAsyncioTestCase):
             "missing_file", "unreadable_image", "model_error", None,
         ])
         self.assertEqual([photo.status for photo in result.photos], ["pending"] * 3 + ["analyzed"])
+        self.assertTrue(result.photos[2].infrastructure_failure)
         self.assertEqual(result.photos[-1].observations[0].photo_id, "front")
         self.assertEqual(self.invoke.await_count, 2)
 

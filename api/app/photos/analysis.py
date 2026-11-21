@@ -102,6 +102,7 @@ class PhotoAnalysis(BaseModel):
     to_confirm: list[Confirmation] = Field(default_factory=list)
     error: Literal["missing_file", "unreadable_image", "model_error"] | None = None
     detail: str | None = None
+    infrastructure_failure: bool = False
 
 class PropertyPhotoAnalysis(BaseModel):
     property_id: str
@@ -251,6 +252,7 @@ async def analyze_property_photos(
         except Exception as exc:
             results.append(PhotoAnalysis(
                 **reference, status="pending", error="model_error", detail=str(exc),
+                infrastructure_failure=isinstance(exc, OSError),
             ))
         else:
             results.append(summarize_photo(photo.id, photo.path, coverage, findings.observations))

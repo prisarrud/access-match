@@ -1,21 +1,16 @@
 import argparse
-import os
 import sys
 from pathlib import Path
 import psycopg
-from dotenv import load_dotenv
 from langchain_core.documents import Document as Chunk
 from langchain_core.embeddings import Embeddings
-from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from ..properties.catalog import DEFAULT_CATALOG_PATH, CatalogLoadError, load_catalog
 from ..properties.schemas import Document
+from .config import load_index_config
 from .vector_store import initialize_index, replace_document
 
-ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
-DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 EMBEDDING_BATCH_SIZE = 32
 
 class PdfExtractionError(ValueError):
@@ -91,20 +86,7 @@ def index_catalog(catalog_path: Path) -> int:
         print("The catalog has no linked PDFs.")
         return 0
 
-    load_dotenv(ENV_PATH)
-
-    database_url = os.getenv("DATABASE_URL")
-
-    if not database_url:
-        raise ValueError("Set DATABASE_URL or copy .env.example to .env in the repository root.")
-
-    model = os.getenv("OLLAMA_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL
-
-    embeddings = OllamaEmbeddings(
-        base_url=os.getenv("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_URL,
-        model=model,
-        client_kwargs={"timeout": 120},
-    )
+    database_url, embeddings = load_index_config()
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)
 
@@ -117,7 +99,7 @@ def index_catalog(catalog_path: Path) -> int:
             try:
                 chunks = prepare_chunks(property_id, document, catalog_path.parent, splitter)
                 vectors = embed_chunks(embeddings, chunks)
-                replace_document(connection, property_id, document.id, chunks, vectors, model)
+                replace_document(connection, property_id, document.id, chunks, vectors, embeddings.model)
             except Exception as exc:
                 failures += 1
                 print(f"ERROR {source}: {exc}", file=sys.stderr)

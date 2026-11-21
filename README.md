@@ -1,19 +1,43 @@
 # AccessMatch
 
-AccessMatch helps wheelchair users compare property entrances before booking a viewing.
-
-<a id="getting-started---api"></a>
+AccessMatch helps wheelchair users compare the route from the sidewalk to a property's entrance before booking a viewing. It focuses on steps, ramps, and clear passage width.
 
 ## Prerequisites
 
 - Make, Python 3.11 or later, and Node.js with npm.
-- Docker with Compose. On macOS, open Docker Desktop before starting the project. [Installation guide](https://docs.docker.com/compose/install/)
-- Ollama. On macOS, open the installer, drag Ollama to **Applications**, and allow it to install the terminal command if prompted. On Linux, follow the official guide. Open the app or run `ollama serve` in a separate terminal, then check the connection with `ollama list`. [Download](https://ollama.com/download) · [macOS guide](https://docs.ollama.com/macos) · [Linux guide](https://docs.ollama.com/linux)
+- Docker with Compose. Start Docker before running the project. [Installation guide](https://docs.docker.com/compose/install/)
+- Ollama. Install it for your operating system and open the app. If you installed only the CLI, start the server in a separate terminal and leave it running. [Ollama download](https://ollama.com/download)
+
+```bash
+ollama serve
+```
+
+<a id="getting-started---api"></a>
 
 ## Run locally
 
-From the repository root, run `make setup` during initial setup and whenever dependencies change. It creates the Python environment, installs dependencies, copies [.env.example](.env.example) if `.env` does not exist, and downloads the configured Ollama model.
+Run these commands from the repository root.
 
-For each session, run `make dev` and open the [catalog](http://localhost:3000). The command starts PostgreSQL, the API, and the frontend. The [API](http://127.0.0.1:8000/docs) runs on port `8000`. Press Ctrl+C to stop the API and frontend.
+### Set up the project
 
-To index the demo PDFs, run `make index` with Ollama running. The chunks are stored in `public.document_chunks`. The default local connection uses `127.0.0.1:5433` and `accessmatch` as the database name, username, and password. If you change the model in `.env`, run `make model` followed by `make index`.
+`make setup` creates the Python environment, installs the API and frontend dependencies, creates `.env` if needed, and downloads the configured Ollama model. Run it during initial setup and whenever dependencies or the configured model change.
+
+```bash
+make setup
+```
+
+### Index the demo documents
+
+`make index` starts PostgreSQL and indexes the PDFs in the demo catalog. Run it during initial setup and whenever the PDFs or embedding model change. Keep Ollama running during indexing.
+
+```bash
+make index
+```
+
+### Start the application
+
+`make dev` starts PostgreSQL, the API, and the frontend. Run it each session, then open the [catalog](http://localhost:3000).
+
+```bash
+make dev
+```

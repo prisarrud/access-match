@@ -2,9 +2,11 @@ from unittest import TestCase
 from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
+from langchain_core.documents import Document
 
 from api.app.comparison.rules import compare_ramp, compare_steps, compare_width
-from api.app.comparison.schemas import ComparisonEvidence
+from api.app.comparison.schemas import ComparisonEvidence, PropertyEvidence
+from api.app.comparison.store import ComparisonStore
 from api.app.documents.extraction import EvidenceSource, ExtractionError, ExtractionResult, GroundedObservation
 from api.app.main import app
 from api.app.photos.analysis import PhotoAnalysis, PhotoObservation, PropertyPhotoAnalysis
@@ -109,7 +111,7 @@ class ComparisonEndpointTests(TestCase):
             (PROPERTY_IDS, {"minimumClearWidthCm": -80}, 422),
             (PROPERTY_IDS, {"minimumClearWidthCm": "80"}, 422),
         ]
-        with patch("api.app.comparison.routes.compare_properties") as compare:
+        with patch("api.app.comparison.routes.collect_comparison_evidence") as compare:
             for ids, criteria, status in cases:
                 with self.subTest(ids=ids, criteria=criteria):
                     result = self.client.post("/comparisons", json={"propertyIds": ids, "criteria": criteria})
@@ -188,3 +190,92 @@ class ComparisonEndpointTests(TestCase):
         self.assertEqual(second["results"][1]["referenceIds"], ["vistoria"])
         self.assertEqual(second["evidence"]["textual"][0]["source"]["page"], 2)
         self.assertEqual(second["issues"][0]["kind"], "infrastructure")
+
+    def test_recalculation_uses_all_collected_evidence_without_model_calls(self):
+        async def retrieve(property_id, criterion):
+            return [Document(page_content="Vão livre medido de 78 cm.")] if criterion == "largura" else []
+
+        async def extract(property_item, criterion, chunks):
+            observations = (
+                [measurement("vistoria", "vistoria", 78)]
+                if property_item.id == PROPERTY_B and criterion == "largura" else []
+            )
+            return ExtractionResult(
+                property_id=property_item.id, criterion=criterion,
+                status="evidence_found" if observations else "insufficient_evidence",
+                sources=[item.source for item in observations], observations=observations,
+            )
+
+        async def visual(property_id):
+            photo_id = f"{property_id}-photo"
+            return PropertyPhotoAnalysis(property_id=property_id, status="complete", photos=[
+                PhotoAnalysis(photo_id=photo_id, source_path="front.jpg", status="analyzed", observations=[
+                    PhotoObservation(photo_id=photo_id, element="rampa", location="patamar"),
+                ]),
+            ])
+
+        with (
+            patch("api.app.comparison.service.retrieve_evidence", side_effect=retrieve) as retrieval,
+            patch("api.app.comparison.service.extract_evidence", side_effect=extract) as extraction,
+            patch("api.app.comparison.service.analyze_property_photos", side_effect=visual) as photos,
+        ):
+            original = self.client.post("/comparisons", json={
+                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 75},
+            })
+            self.assertEqual(original.status_code, 200)
+            comparison = original.json()
+            first, second = comparison["properties"]
+            self.assertEqual(second["results"][0]["status"], "atende")
+            self.assertEqual(retrieval.await_count, 3)
+            self.assertEqual(extraction.await_count, 6)
+            self.assertEqual(photos.await_count, 2)
+            self.assertEqual({item["retrieval"] for item in first["evidence"]["textSearches"]}, {"no_documents"})
+            self.assertEqual(
+                {item["criterion"]: (item["retrieval"], item["extraction"])
+                 for item in second["evidence"]["textSearches"]},
+                {"largura": ("found", "found"), "degraus": ("no_results", "no_results"),
+                 "rampas": ("no_results", "no_results")},
+            )
+
+            for integration in (retrieval, extraction, photos):
+                integration.reset_mock()
+                integration.side_effect = AssertionError("Recalculation must not call analysis integrations")
+
+            path = f'/comparisons/{comparison["comparisonId"]}/recalculate'
+            updated = self.client.post(path, json={
+                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 80, "ramp": True},
+            })
+            self.assertEqual(updated.status_code, 200)
+            self.assertEqual(updated.json()["comparisonId"], comparison["comparisonId"])
+            after = updated.json()["properties"][1]
+            self.assertEqual({item["criterion"]: item["status"] for item in after["results"]}, {
+                "largura": "nao_atende", "rampas": "atende",
+            })
+            self.assertEqual(after["results"][1]["referenceIds"], second["results"][0]["referenceIds"])
+            self.assertEqual(after["evidence"], second["evidence"])
+
+            invalid = self.client.post(path, json={"propertyIds": PROPERTY_IDS, "criteria": {}})
+            self.assertEqual(invalid.status_code, 422)
+            wrong_pair = self.client.post(path, json={
+                "propertyIds": [PROPERTY_IDS[0], "unknown"], "criteria": {"ramp": True},
+            })
+            self.assertEqual(wrong_pair.status_code, 410)
+            for integration in (retrieval, extraction, photos):
+                integration.assert_not_awaited()
+
+    def test_expired_or_unavailable_reference_does_not_start_new_analysis(self):
+        now = [0.0]
+        app.state.comparisons = ComparisonStore(ttl_seconds=5, clock=lambda: now[0])
+        reference = app.state.comparisons.save([
+            PropertyEvidence(propertyId=property_id, title=property_id, evidence=ComparisonEvidence(), issues=[])
+            for property_id in PROPERTY_IDS
+        ])
+        request = {"propertyIds": PROPERTY_IDS, "criteria": {"ramp": True}}
+        with patch("api.app.comparison.routes.collect_comparison_evidence") as collect:
+            self.assertEqual(self.client.post(f"/comparisons/{reference}/recalculate", json=request).status_code, 200)
+            now[0] = 5.0
+            for comparison_id in (reference, "unavailable"):
+                response = self.client.post(f"/comparisons/{comparison_id}/recalculate", json=request)
+                self.assertEqual(response.status_code, 410)
+                self.assertIn("expirou", response.json()["detail"])
+            collect.assert_not_called()

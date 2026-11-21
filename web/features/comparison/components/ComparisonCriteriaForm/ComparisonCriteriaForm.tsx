@@ -5,9 +5,10 @@ import styles from './ComparisonCriteriaForm.module.css'
 type ComparisonCriteriaFormProps = {
   propertyIds: ComparisonRequest['propertyIds']
   submission: ComparisonSubmission
+  comparisonId?: string
 }
 
-export function ComparisonCriteriaForm({ propertyIds, submission }: ComparisonCriteriaFormProps) {
+export function ComparisonCriteriaForm({ propertyIds, submission, comparisonId }: ComparisonCriteriaFormProps) {
   const { values } = submission
   const errors = submission.status === 'invalid' ? submission.errors : undefined
 
@@ -19,6 +20,8 @@ export function ComparisonCriteriaForm({ propertyIds, submission }: ComparisonCr
       ))}
 
       <input type='hidden' name='criterios' value='1' />
+
+      {comparisonId !== undefined && <input type='hidden' name='comparacao' value={comparisonId} />}
 
       <fieldset className={styles.fields}
         aria-describedby={errors?.criteria ? 'comparison-criteria-help comparison-criteria-error' : 'comparison-criteria-help'}>
@@ -55,7 +58,9 @@ export function ComparisonCriteriaForm({ propertyIds, submission }: ComparisonCr
         </div>
       </fieldset>
 
-      <button type='submit' className='button button-primary'>Confirmar critérios</button>
+      <button type='submit' className='button button-primary'>
+        {comparisonId === undefined ? 'Confirmar critérios' : 'Atualizar comparação'}
+      </button>
 
       {submission.status === 'valid' && <p role='status'>Critérios registrados para esta seleção.</p>}
     </form>

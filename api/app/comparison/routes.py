@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-
 from ..properties.schemas import PropertyCatalog
 from .schemas import ComparisonRequest, ComparisonResponse
-from .service import compare_properties
+from .service import calculate_comparison, collect_comparison_evidence
+from .store import ComparisonStore
 
 class ComparisonRoute(APIRoute):
     def get_route_handler(self):
@@ -38,4 +38,26 @@ async def create_comparison(payload: ComparisonRequest, request: Request) -> Com
     if first is None or second is None:
         raise HTTPException(status_code=404, detail="Um ou mais imóveis da seleção não estão no catálogo.")
 
-    return ComparisonResponse(properties=await compare_properties((first, second), payload.criteria))
+    evidence = await collect_comparison_evidence((first, second))
+
+    store: ComparisonStore = request.app.state.comparisons
+
+    comparison_id = store.save(evidence)
+
+    return calculate_comparison(comparison_id, evidence, payload.criteria)
+
+
+@router.post("/{comparison_id}/recalculate")
+async def recalculate_comparison(
+    comparison_id: str, payload: ComparisonRequest, request: Request,
+) -> ComparisonResponse:
+    store: ComparisonStore = request.app.state.comparisons
+
+    active = store.get(comparison_id)
+
+    if active is None or tuple(item.propertyId for item in active.properties) != payload.propertyIds:
+        raise HTTPException(
+            status_code=410, detail="Esta análise expirou ou não está disponível para estes imóveis.",
+        )
+
+    return calculate_comparison(comparison_id, active.properties, payload.criteria)

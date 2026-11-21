@@ -1,7 +1,5 @@
 from typing import Literal, Self
-
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
-
 from ..documents.extraction import Criterion, EvidenceSource, GroundedObservation
 from ..photos.analysis import Confirmation, PhotoAnalysis
 from ..properties.schemas import NonBlankText
@@ -52,10 +50,17 @@ class AnalysisIssue(BaseModel):
     photoId: str | None = None
 
 
+class TextSearch(BaseModel):
+    criterion: Criterion
+    retrieval: Literal["found", "no_results", "no_documents", "failed"]
+    extraction: Literal["found", "no_results", "failed"]
+
+
 class ComparisonEvidence(BaseModel):
     textSources: list[EvidenceSource] = Field(default_factory=list)
     textual: list[GroundedObservation] = Field(default_factory=list)
     visual: list[PhotoAnalysis] = Field(default_factory=list)
+    textSearches: list[TextSearch] = Field(default_factory=list)
 
 
 class CriterionResult(BaseModel):
@@ -67,13 +72,17 @@ class CriterionResult(BaseModel):
     toConfirm: list[Confirmation | Literal["current_entrance_width"]] = Field(default_factory=list)
 
 
-class PropertyComparisonResult(BaseModel):
+class PropertyEvidence(BaseModel):
     propertyId: str
     title: str
     evidence: ComparisonEvidence
-    results: list[CriterionResult]
     issues: list[AnalysisIssue]
 
 
+class PropertyComparisonResult(PropertyEvidence):
+    results: list[CriterionResult]
+
+
 class ComparisonResponse(BaseModel):
+    comparisonId: str
     properties: list[PropertyComparisonResult]

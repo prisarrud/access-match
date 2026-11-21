@@ -40,16 +40,23 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
   }
 
   const submission = readComparisonSubmission(ids, params)
+  const comparisonId = params.novaAnalise === '1' || params.comparacao === undefined
+    ? undefined
+    : typeof params.comparacao === 'string' ? params.comparacao : ''
 
   return (
     <>
       <PropertyComparison properties={[first, second]} />
 
-      <ComparisonCriteriaForm propertyIds={ids} submission={submission} />
+      <ComparisonCriteriaForm propertyIds={ids} submission={submission} comparisonId={comparisonId} />
 
       {submission.status === 'valid' && (
-        <Suspense fallback={<p className='notice' role='status'>Analisando as fontes da comparação…</p>}>
-          <ComparisonResults request={submission.request} />
+        <Suspense fallback={
+          <p className='notice' role='status'>
+            {comparisonId === undefined ? 'Analisando as fontes da comparação…' : 'Atualizando a comparação…'}
+          </p>
+        }>
+          <ComparisonResults submission={submission} comparisonId={comparisonId} />
         </Suspense>
       )}
     </>

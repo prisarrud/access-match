@@ -13,6 +13,7 @@ type SourceReference = {
 }
 
 export type ComparisonResponse = {
+  comparisonId: string
   properties: {
     propertyId: string
     title: string

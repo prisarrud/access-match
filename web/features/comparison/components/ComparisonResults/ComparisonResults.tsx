@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation'
+import { propertyQueryParam } from '@/features/property-access-comparison'
 import { submitComparison } from '../../services'
-import type { ComparisonRequest, CriterionResult } from '../../types'
+import type { ComparisonSubmission, CriterionResult } from '../../types'
 import styles from './ComparisonResults.module.css'
 
 const criterionLabels = {
@@ -19,14 +21,49 @@ const documentLabels = {
   vistoria: 'Ficha de vistoria',
 }
 
-export async function ComparisonResults({ request }: { request: ComparisonRequest }) {
-  const comparison = await submitComparison(request)
-  if (comparison === null) {
+type ComparisonResultsProps = {
+  submission: Extract<ComparisonSubmission, { status: 'valid' }>
+  comparisonId?: string
+}
+
+export async function ComparisonResults({ submission, comparisonId }: ComparisonResultsProps) {
+  const outcome = await submitComparison(submission.request, comparisonId)
+  if (outcome.status === 'unavailable') {
+    return (
+      <div className='notice'>
+        <p role='alert'>A análise anterior expirou ou não está disponível para estes imóveis.</p>
+
+        <button type='submit' form='criterios' name='novaAnalise' value='1' className='button button-secondary'>
+          Executar nova análise
+        </button>
+      </div>
+    )
+  }
+
+  if (outcome.status === 'error') {
     return (
       <p className='notice' role='alert'>
         Não foi possível concluir a comparação. Confirme os critérios novamente para tentar outra vez.
       </p>
     )
+  }
+
+  const { comparison } = outcome
+
+  if (comparisonId === undefined) {
+    const { propertyIds, criteria } = submission.request
+
+    const params = new URLSearchParams({
+      comparacao: comparison.comparisonId, criterios: '1', largura: submission.values.width,
+    })
+
+    for (const id of propertyIds) params.append(propertyQueryParam, id)
+
+    if (criteria.stepFree) params.set('degraus', '1')
+
+    if (criteria.ramp) params.set('rampa', '1')
+
+    redirect(`/comparar?${params}#criterios`)
   }
 
   return (

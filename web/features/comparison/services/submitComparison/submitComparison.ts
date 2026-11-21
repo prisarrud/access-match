@@ -1,25 +1,44 @@
 import type { ComparisonRequest, ComparisonResponse } from '../../types'
 
-export async function submitComparison(request: ComparisonRequest): Promise<ComparisonResponse | null> {
+type SubmissionResult =
+  | { status: 'success', comparison: ComparisonResponse }
+  | { status: 'unavailable' }
+  | { status: 'error' }
+
+export async function submitComparison(
+  request: ComparisonRequest, comparisonId?: string,
+): Promise<SubmissionResult> {
   const baseUrl = process.env.API_BASE_URL
 
-  if (!baseUrl) return null
+  if (!baseUrl) return { status: 'error' }
+
+  if (comparisonId !== undefined && !/^[a-f0-9]{32}$/.test(comparisonId)) {
+    return { status: 'unavailable' }
+  }
 
   try {
-    const response = await fetch(new URL('comparisons', `${baseUrl.replace(/\/+$/, '')}/`), {
+    const path = comparisonId === undefined
+      ? 'comparisons'
+      : `comparisons/${encodeURIComponent(comparisonId)}/recalculate`
+
+    const response = await fetch(new URL(path, `${baseUrl.replace(/\/+$/, '')}/`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       cache: 'no-store',
-      signal: AbortSignal.timeout(300_000),
+      signal: AbortSignal.timeout(comparisonId === undefined ? 300_000 : 10_000),
     })
 
-    if (!response.ok) return null
+    if (comparisonId !== undefined && response.status === 410) return { status: 'unavailable' }
 
-    const result: ComparisonResponse = await response.json()
-  
-    return Array.isArray(result.properties) ? result : null
+    if (!response.ok) return { status: 'error' }
+
+    const comparison: ComparisonResponse = await response.json()
+
+    if (!comparison.comparisonId || !Array.isArray(comparison.properties)) return { status: 'error' }
+
+    return { status: 'success', comparison }
   } catch {
-    return null
+    return { status: 'error' }
   }
 }

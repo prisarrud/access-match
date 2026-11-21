@@ -1,0 +1,1 @@
+export { readComparisonSubmission } from './readComparisonSubmission'

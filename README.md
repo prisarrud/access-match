@@ -20,7 +20,7 @@ Run these commands from the repository root.
 
 ### Set up the project
 
-`make setup` creates the Python environment, installs the API and frontend dependencies, creates `.env` if needed, and downloads the configured Ollama model. Run it during initial setup and whenever dependencies or the configured model change.
+`make setup` creates the Python environment, installs the API and frontend dependencies, creates `.env` if needed, and downloads the configured Ollama embedding and extraction models. Run it during initial setup and whenever dependencies or the configured models change.
 
 ```bash
 make setup

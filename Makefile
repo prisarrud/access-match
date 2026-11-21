@@ -5,10 +5,10 @@ API_BASE_URL ?= http://127.0.0.1:8000
 .PHONY: help setup model db dev index
 
 help:
-	@printf '%s\n' 'make setup  Install dependencies, create .env, and download the model' \
+	@printf '%s\n' 'make setup  Install dependencies, create .env, and download the models' \
 		'make dev    Start PostgreSQL, the API, and the frontend' \
 		'make index  Index the PDFs in PostgreSQL' \
-		'make model  Download the model configured in .env'
+		'make model  Download the Ollama models configured in .env'
 
 setup:
 	@test -f .env || cp .env.example .env
@@ -20,11 +20,14 @@ setup:
 model:
 	@printf '%s\n' \
 		'import os' \
+		'import subprocess' \
 		'from dotenv import load_dotenv' \
 		'load_dotenv(".env")' \
-		'model = os.getenv("OLLAMA_EMBEDDING_MODEL") or "nomic-embed-text"' \
 		'os.environ["OLLAMA_HOST"] = os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434"' \
-		'os.execlp("ollama", "ollama", "pull", model)' | $(API_PYTHON) -
+		'embedding = os.getenv("OLLAMA_EMBEDDING_MODEL") or "nomic-embed-text"' \
+		'extraction = os.getenv("OLLAMA_EXTRACTION_MODEL") or "llama3.2"' \
+		'for model in dict.fromkeys((embedding, extraction)):' \
+		'    subprocess.run(["ollama", "pull", model], check=True)' | $(API_PYTHON) -
 
 db:
 	docker compose up -d --wait postgres

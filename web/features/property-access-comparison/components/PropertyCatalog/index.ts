@@ -1,0 +1,1 @@
+export { PropertyCatalog } from './PropertyCatalog'

@@ -1,0 +1,1 @@
+export { PropertyComparison } from './PropertyComparison'

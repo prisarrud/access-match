@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .properties.catalog import load_catalog
+from .properties.routes import router as properties_router
 
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
@@ -11,3 +12,5 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 app = FastAPI(title="AccessMatch", lifespan=lifespan)
+
+app.include_router(properties_router)

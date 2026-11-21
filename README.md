@@ -3,21 +3,19 @@ AccessMatch is an AI-powered tool that helps wheelchair users compare property e
 
 ## Getting Started - Web
 
-First, run the development server:
+Start the API using the instructions below. In a second terminal, run the frontend from the repository root.
 
 ```bash
 cd web
 
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+
+API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [the local catalog](http://localhost:3000), select two properties, and choose **Comparar imóveis**. Reload the comparison page to check that the selection is kept in the URL.
+
+To save the setting, add `API_BASE_URL=http://127.0.0.1:8000` to `web/.env.local` and run `npm run dev`. The Next.js server fetches the catalog from this address, and the browser opens cover images directly from the API. Use an address reachable by both.
 
 ## Getting Started - API
 
@@ -32,3 +30,5 @@ python -m pip install -r api/requirements.txt
 
 python -m uvicorn api.app.main:app --reload
 ```
+
+Open [the local API catalog](http://127.0.0.1:8000/properties) to inspect the summaries and their cover image URLs.

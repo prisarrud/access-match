@@ -3,40 +3,30 @@
     {
       "id": "edificio-ipe",
       "title": "Anúncio do Edifício Ipê",
-      "description": "Apartamento de dois dormitórios no Centro Histórico de Porto Alegre (RS).\n\nA entrada frontal aparece na foto do anúncio. O condomínio informa que há um acesso lateral pelo pátio. Consulte a administração para saber como entrar pelo portão lateral.\n",
+      "description": "Apartamento de dois dormitórios no Centro Histórico de Porto Alegre (RS).\n\nA entrada do prédio é sem degraus.\n",
       "photos": [
         {
           "id": "edificio-ipe-foto-frontal",
-          "path": "edificio-ipe/entrada-frontal.jpg",
-          "alt": "Calçada e entrada frontal do Edifício Ipê, com um degrau diante da porta."
+          "path": "property-a/entrada-frontal.jpg",
+          "alt": "Foto sintética da entrada frontal do Edifício Ipê. Um degrau de concreto separa a calçada do patamar diante da porta."
         }
       ],
-      "documents": [
-        {
-          "id": "edificio-ipe-memorial",
-          "title": "Memorial descritivo do Edifício Ipê",
-          "type": "memorial",
-          "date": "2022-03-15",
-          "path": "edificio-ipe/memorial.md"
-        },
-        {
-          "id": "edificio-ipe-vistoria",
-          "title": "Vistoria da entrada frontal do Edifício Ipê",
-          "type": "vistoria",
-          "date": "2026-10-10",
-          "path": "edificio-ipe/vistoria.md"
-        }
-      ]
+      "documents": []
     },
     {
       "id": "residencial-oliveira",
       "title": "Anúncio do Residencial Oliveira",
-      "description": "Apartamento de dois dormitórios no bairro Rio Branco, em Porto Alegre (RS).\n\nSegundo o anunciante, a entrada de pedestres tem rampa da calçada até o patamar da porta do hall. A largura livre da porta ficou sem medida no anúncio.\n",
+      "description": "Apartamento de dois dormitórios no bairro Rio Branco, em Porto Alegre (RS).\n\nA entrada tem uma porta ampla.\n",
       "photos": [
         {
-          "id": "residencial-oliveira-foto-frontal",
-          "path": "residencial-oliveira/entrada-frontal.jpg",
-          "alt": "Rampa com corrimão entre a calçada e a porta frontal do Residencial Oliveira."
+          "id": "residencial-oliveira-foto-porta",
+          "path": "property-b/porta-entrada.jpg",
+          "alt": "Foto sintética de frente para a porta de vidro fechada do Residencial Oliveira, com a soleira e o piso próximo. A calçada está fora do quadro."
+        },
+        {
+          "id": "residencial-oliveira-foto-patamar",
+          "path": "property-b/patamar-entrada.jpg",
+          "alt": "Foto sintética em diagonal da porta de vidro do Residencial Oliveira, do patamar e de parte do corrimão. O início do percurso junto à calçada está fora do quadro."
         }
       ],
       "documents": [
@@ -45,14 +35,14 @@
           "title": "Memorial descritivo do Residencial Oliveira",
           "type": "memorial",
           "date": "2023-04-18",
-          "path": "residencial-oliveira/memorial.md"
+          "path": "property-b/memorial-descritivo.pdf"
         },
         {
           "id": "residencial-oliveira-vistoria",
-          "title": "Vistoria da entrada frontal do Residencial Oliveira",
+          "title": "Ficha de vistoria do Residencial Oliveira",
           "type": "vistoria",
           "date": "2026-10-12",
-          "path": "residencial-oliveira/vistoria.md"
+          "path": "property-b/ficha-vistoria.pdf"
         }
       ]
     }

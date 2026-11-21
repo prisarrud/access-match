@@ -1,34 +1,19 @@
-# access-match
-AccessMatch is an AI-powered tool that helps wheelchair users compare property entrances before booking a viewing. It analyzes listing descriptions, photos, and property documents to highlight barriers, show how each entrance matches the user’s access needs, and flag details to confirm with the advertiser.
+# AccessMatch
 
-## Getting Started - Web
+AccessMatch helps wheelchair users compare property entrances before booking a viewing.
 
-Start the API using the instructions below. In a second terminal, run the frontend from the repository root.
+<a id="getting-started---api"></a>
 
-```bash
-cd web
+## Prerequisites
 
-npm install
+- Make, Python 3.11 or later, and Node.js with npm.
+- Docker with Compose. On macOS, open Docker Desktop before starting the project. [Installation guide](https://docs.docker.com/compose/install/)
+- Ollama. On macOS, open the installer, drag Ollama to **Applications**, and allow it to install the terminal command if prompted. On Linux, follow the official guide. Open the app or run `ollama serve` in a separate terminal, then check the connection with `ollama list`. [Download](https://ollama.com/download) · [macOS guide](https://docs.ollama.com/macos) · [Linux guide](https://docs.ollama.com/linux)
 
-API_BASE_URL=http://127.0.0.1:8000 npm run dev
-```
+## Run locally
 
-Open [the local catalog](http://localhost:3000), select two properties, and choose **Comparar imóveis**. Reload the comparison page to check that the selection is kept in the URL.
+From the repository root, run `make setup` during initial setup and whenever dependencies change. It creates the Python environment, installs dependencies, copies [.env.example](.env.example) if `.env` does not exist, and downloads the configured Ollama model.
 
-To save the setting, add `API_BASE_URL=http://127.0.0.1:8000` to `web/.env.local` and run `npm run dev`. The Next.js server fetches the catalog from this address, and the browser opens cover images directly from the API. Use an address reachable by both.
+For each session, run `make dev` and open the [catalog](http://localhost:3000). The command starts PostgreSQL, the API, and the frontend. The [API](http://127.0.0.1:8000/docs) runs on port `8000`. Press Ctrl+C to stop the API and frontend.
 
-## Getting Started - API
-
-From the repository root, create a virtual environment with Python 3.11 or later and install the API dependencies.
-
-```bash
-python3 -m venv api/.venv
-
-source api/.venv/bin/activate
-
-python -m pip install -r api/requirements.txt
-
-python -m uvicorn api.app.main:app --reload
-```
-
-Open [the local API catalog](http://127.0.0.1:8000/properties) to inspect the summaries and their cover image URLs.
+To index the demo PDFs, run `make index` with Ollama running. The chunks are stored in `public.document_chunks`. The default local connection uses `127.0.0.1:5433` and `accessmatch` as the database name, username, and password. If you change the model in `.env`, run `make model` followed by `make index`.

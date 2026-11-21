@@ -4,11 +4,11 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase
 from api.app.properties.catalog import CatalogLoadError, load_catalog
 
-PHOTO = {"id": "entrada", "path": "imovel/entrada.jpg", "alt": "Porta de entrada"}
+PHOTO = {"id": "entrada", "path": "imovel/entrada.jpg", "alt": "Entrance door"}
 DOCUMENT = {
     "id": "memorial",
     "path": "imovel/memorial.md",
-    "title": "Memorial descritivo",
+    "title": "Design specification",
     "type": "memorial",
 }
 
@@ -16,7 +16,7 @@ class CatalogTests(TestCase):
     def setUp(self):
         directory = self.enterContext(TemporaryDirectory())
         self.path = Path(directory) / "properties.json"
-        self.listing = {"id": "imovel", "title": "Apartamento", "description": "Texto original.\n"}
+        self.listing = {"id": "imovel", "title": "Apartment", "description": "Original text.\n"}
 
     def write_catalog(self, *properties):
         self.path.write_text(json.dumps({"properties": properties}), encoding="utf-8")
@@ -41,13 +41,13 @@ class CatalogTests(TestCase):
         self.assertEqual(load_catalog(self.path).properties, [])
         self.path.write_text("{", encoding="utf-8")
 
-        with self.assertRaisesRegex(CatalogLoadError, r"Catálogo inválido.*properties\.json"):
+        with self.assertRaisesRegex(CatalogLoadError, r"Invalid catalog.*properties\.json"):
             load_catalog(self.path)
 
     def test_rejects_duplicate_property_ids(self):
         self.write_catalog(self.listing, self.listing)
 
-        with self.assertRaisesRegex(CatalogLoadError, "ID de imóvel duplicado.*imovel"):
+        with self.assertRaisesRegex(CatalogLoadError, "Duplicate property ID.*imovel"):
             load_catalog(self.path)
 
     def test_rejects_duplicate_source_ids_across_attachment_types(self):
@@ -57,7 +57,7 @@ class CatalogTests(TestCase):
             "documents": [{**DOCUMENT, "id": PHOTO["id"]}],
         })
 
-        with self.assertRaisesRegex(CatalogLoadError, "ID de fonte duplicado.*imovel.*entrada"):
+        with self.assertRaisesRegex(CatalogLoadError, "Duplicate source ID.*imovel.*entrada"):
             load_catalog(self.path)
 
     def test_rejects_invalid_source_fields(self):

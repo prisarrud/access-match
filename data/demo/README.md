@@ -1,32 +1,32 @@
-# Dados da demonstração
+# Demo data
 
-`properties.json` contém dois imóveis fictícios de Porto Alegre (RS). Cada imóvel preserva a descrição original do anúncio. As fotos são sintéticas, os memoriais registram previsões de projeto e as vistorias registram observações e medições feitas na data indicada.
+`properties.json` contains two fictional properties in Porto Alegre, Brazil. Each property includes the wording of its demo listing. The photos are synthetic. Design specifications describe the planned features, and inspection reports record measurements and observations from the stated visit date.
 
-## Onde conferir as fontes
+## Sources
 
-| Imóvel | Fonte | O que consta na fonte |
+| Property | Source | What the source says |
 | --- | --- | --- |
-| A · Edifício Ipê | [Anúncio](property-a/anuncio.md) | Afirma que a entrada é sem degraus. |
-| A · Edifício Ipê | [Foto frontal](property-a/entrada-frontal.jpg) | Mostra um degrau entre a calçada e o patamar da porta fotografada. A existência de outro acesso sem degraus e a largura livre da porta ficam em aberto. |
-| B · Residencial Oliveira | [Anúncio](property-b/anuncio.md) | Descreve a entrada apenas como tendo uma «porta ampla». |
-| B · Residencial Oliveira | [Foto da porta](property-b/porta-entrada.jpg) e [foto do patamar](property-b/patamar-entrada.jpg) | Mostram a porta e seu entorno imediato. O início do percurso desde a calçada fica fora do quadro. |
-| B · Residencial Oliveira | [Memorial descritivo](property-b/memorial-descritivo.pdf), p. 2, seção 3.1 | Prevê 85 cm de vão livre para a porta de entrada do hall (PE-01) em 18/04/2023. |
-| B · Residencial Oliveira | [Ficha de vistoria](property-b/ficha-vistoria.pdf), p. 2, seção 3.1 | Registra 78 cm de vão livre medidos na mesma porta (PE-01) em 12/10/2026. |
+| A · Edifício Ipê | [Listing](property-a/anuncio.md) | Says the entrance is step-free. |
+| A · Edifício Ipê | [Front photo](property-a/entrada-frontal.jpg) | Shows a step between the sidewalk and the door landing. The photo leaves open whether another step-free entrance exists and how wide the photographed doorway is. |
+| B · Residencial Oliveira | [Listing](property-b/anuncio.md) | Describes the entrance as having a “wide door.” |
+| B · Residencial Oliveira | [Door photo](property-b/porta-entrada.jpg) and [landing photo](property-b/patamar-entrada.jpg) | Show the door and the area immediately around it. The start of the route from the sidewalk is outside the frame. |
+| B · Residencial Oliveira | [Design specification](property-b/memorial-descritivo.pdf), p. 2, section 3.1 | Specifies an 85 cm clear opening for the lobby entrance door (PE-01) on April 18, 2023. |
+| B · Residencial Oliveira | [Inspection report](property-b/ficha-vistoria.pdf), p. 2, section 3.1 | Records a measured clear opening of 78 cm for the same door (PE-01) on October 12, 2026. |
 
-## Como acrescentar um imóvel
+## Add a property
 
-Acrescente um objeto à lista `properties` com um `id` estável e único, o `title` do anúncio e a `description` copiada do texto original. As listas `photos` e `documents` podem ser vazias ou omitidas.
+Add an object to the `properties` array with a stable, unique `id`, the listing `title`, and its original `description`. The `photos` and `documents` arrays can be empty or omitted.
 
-- Cada foto tem `id`, `path` e `alt` (texto alternativo).
-- Cada documento tem `id`, `title`, `type` (`memorial` ou `vistoria`) e `path`. Quando conhecida, informe a `date` da revisão do memorial ou da visita de vistoria no formato `AAAA-MM-DD`.
+- Each photo has an `id`, a `path`, and `alt` text.
+- Each document has an `id`, a `title`, a `type` (`memorial` or `vistoria`), and a `path`. If known, include the specification revision or inspection visit `date` in `YYYY-MM-DD` format.
 
-Use caminhos relativos a `data/demo`, com barras `/`. Os IDs de fotos e documentos precisam ser únicos dentro do imóvel, inclusive entre as duas listas. O par de IDs do imóvel e da fonte permite identificar o arquivo original. A descrição pertence ao próprio imóvel. A página será associada ao trecho recuperado pelo RAG.
+Use paths relative to `data/demo` with `/` separators. Photo and document IDs must be unique within each property across both arrays. The property ID and source ID together identify the original file. The description belongs to the property. RAG associates each retrieved chunk with its PDF page.
 
-## Como validar
+## Validate the catalog
 
-O FastAPI lê e valida o catálogo na inicialização, independentemente do diretório de execução. Se o arquivo estiver ausente, o catálogo começa vazio. Formato inválido e IDs duplicados geram um erro com o caminho do catálogo e o detalhe da validação.
+FastAPI loads and validates the catalog on startup, regardless of the working directory. A missing catalog starts empty. Invalid data or duplicate IDs produce an error with the catalog path and validation details.
 
-Configure o ambiente virtual conforme o [README do projeto](../../README.md#getting-started---api). Depois, execute os comandos abaixo na raiz do repositório.
+Set up the Python environment using the [project README](../../README.md#getting-started---api), then run these commands from the repository root.
 
 ```bash
 api/.venv/bin/python -c 'from api.app.properties.catalog import load_catalog; print(len(load_catalog().properties))'
@@ -34,9 +34,9 @@ api/.venv/bin/python -m unittest discover -s api/tests
 ```
 
 <details>
-<summary>Prompts das fotos sintéticas</summary>
+<summary>Synthetic photo prompts</summary>
 
-As fotos foram geradas com a ferramenta integrada de geração de imagens. A foto do Edifício Ipê foi reaproveitada. As duas fotos do Residencial Oliveira usam uma imagem sintética anterior do mesmo imóvel como referência visual.
+The photos were created with the integrated image generation tool. The Edifício Ipê photo was reused. The two Residencial Oliveira photos use an earlier synthetic image of the same property as a visual reference.
 
 **edificio-ipe**
 

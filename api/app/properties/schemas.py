@@ -15,7 +15,7 @@ def validate_relative_path(value: str) -> str:
         or ".." in path.parts
         or not path.parts
     ):
-        raise ValueError("use um caminho relativo a data/demo, com barras '/' e sem '..'")
+        raise ValueError("use a path relative to data/demo with '/' separators and no '..'")
     return value
 
 RelativeFile = Annotated[NonBlankText, AfterValidator(validate_relative_path)]
@@ -48,7 +48,7 @@ class Property(BaseModel):
         seen: set[str] = set()
         for source in [*self.photos, *self.documents]:
             if source.id in seen:
-                raise ValueError(f"ID de fonte duplicado no imóvel {self.id!r}: {source.id!r}")
+                raise ValueError(f"Duplicate source ID for property {self.id!r}: {source.id!r}")
             seen.add(source.id)
         return self
 
@@ -62,6 +62,6 @@ class PropertyCatalog(BaseModel):
         seen: set[str] = set()
         for item in self.properties:
             if item.id in seen:
-                raise ValueError(f"ID de imóvel duplicado no catálogo: {item.id!r}")
+                raise ValueError(f"Duplicate property ID in the catalog: {item.id!r}")
             seen.add(item.id)
         return self

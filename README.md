@@ -4,9 +4,9 @@ AccessMatch helps wheelchair users compare the route from the sidewalk to a prop
 
 ## Prerequisites
 
-- Make, Python 3.11 or later, and Node.js with npm.
-- Docker with Compose. Start Docker before running the project. [Installation guide](https://docs.docker.com/compose/install/)
-- Ollama. Install it for your operating system and open the app. If you installed only the CLI, start the server in a separate terminal and leave it running. [Ollama download](https://ollama.com/download)
+- Make, Python 3.11 or later, and Node.js 20.9 or later with npm.
+- Docker with Compose. Start Docker before running the project. Compose downloads and runs PostgreSQL with pgvector. [Docker installation guide](https://docs.docker.com/compose/install/)
+- Ollama. Install it and open the app, or run the server in a separate terminal if you use the CLI. Keep Ollama running during setup and while using the project. [Ollama installation](https://ollama.com/download)
 
 ```bash
 ollama serve
@@ -20,23 +20,15 @@ Run these commands from the repository root.
 
 ### Set up the project
 
-`make setup` creates the Python environment, installs the API and frontend dependencies, creates `.env` if needed, and downloads the configured Ollama embedding and extraction models. Run it during initial setup and whenever dependencies or the configured models change.
+`make setup` creates `.env` from [`.env.example`](.env.example) if needed, installs the API and frontend dependencies, downloads the configured Ollama models, starts PostgreSQL, and indexes the demo PDFs. Run it on a fresh checkout and when dependencies, models, or demo PDFs change.
 
 ```bash
 make setup
 ```
 
-### Index the demo documents
-
-`make index` starts PostgreSQL and indexes the PDFs in the demo catalog. Run it during initial setup and whenever the PDFs or embedding model change. Keep Ollama running during indexing.
-
-```bash
-make index
-```
-
 ### Start the application
 
-`make dev` starts PostgreSQL, the API, and the frontend. Run it each session, then open the [catalog](http://localhost:3000).
+`make dev` starts PostgreSQL, the API, and the frontend. Run it each session, then open the [catalog](http://localhost:3000) and select two properties to compare.
 
 ```bash
 make dev

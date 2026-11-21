@@ -1,0 +1,91 @@
+import base64
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+from unittest import IsolatedAsyncioTestCase
+from unittest.mock import AsyncMock, patch
+
+from PIL import Image
+
+from api.app.photos import analysis
+
+class PhotoAnalysisTests(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.folder = Path(self.enterContext(TemporaryDirectory()))
+        self.catalog = self.folder / "properties.json"
+        self.valid_photo = self.folder / "front.jpg"
+        Image.new("RGB", (16, 16)).save(self.valid_photo)
+        self.photo = {"id": "front", "path": self.valid_photo.name, "alt": "unused alt text"}
+        self.invoke = AsyncMock(return_value={"observations": [
+            {"element": "degrau", "location": "entre a calçada e o patamar"},
+        ]})
+        model = SimpleNamespace(with_structured_output=lambda *args, **kwargs: SimpleNamespace(
+            ainvoke=self.invoke,
+        ))
+        self.load_model = self.enterContext(patch.object(
+            analysis, "load_vision_model", return_value=model,
+        ))
+
+    def write_catalog(self, photos):
+        self.catalog.write_text(json.dumps({"properties": [
+            {"id": "a", "title": "A", "description": "unused listing", "photos": photos},
+            {"id": "b", "title": "B", "description": "unused listing", "photos": [
+                {**self.photo, "id": "other-property"},
+            ]},
+        ]}), encoding="utf-8")
+
+    async def test_sends_only_image_and_prompt_and_assigns_catalog_reference(self):
+        self.write_catalog([self.photo])
+        result = await analysis.analyze_property_photos("a", self.catalog)
+
+        self.assertEqual(result.status, "complete")
+        [photo] = result.photos
+        self.assertEqual(photo.photo_id, "front")
+        self.assertEqual(photo.observations[0].photo_id, "front")
+        self.assertEqual(photo.observations[0].element, "degrau")
+        [[message]] = self.invoke.await_args.args
+        text, image = message.content
+        self.assertNotIn(self.photo["alt"], text["text"])
+        self.assertNotIn("unused listing", text["text"])
+        self.assertEqual(text["text"], analysis.PROMPT)
+        self.assertEqual(base64.b64decode(image["image_url"].split(",", 1)[1]), self.valid_photo.read_bytes())
+
+    async def test_empty_catalog_photo_list_needs_no_model(self):
+        self.write_catalog([])
+        result = await analysis.analyze_property_photos("a", self.catalog)
+        self.assertEqual(result.status, "no_photos")
+        self.assertEqual(result.photos, [])
+        self.load_model.assert_not_called()
+
+    async def test_preserves_success_and_marks_failed_photos_as_pending(self):
+        (self.folder / "broken.jpg").write_bytes(b"invalid image")
+        self.write_catalog([
+            {**self.photo, "id": "missing", "path": "missing.jpg"},
+            {**self.photo, "id": "broken", "path": "broken.jpg"},
+            {**self.photo, "id": "model-failure"},
+            self.photo,
+        ])
+        self.invoke.side_effect = [ConnectionError("Ollama unavailable"), self.invoke.return_value]
+
+        result = await analysis.analyze_property_photos("a", self.catalog)
+
+        self.assertEqual(result.status, "partial")
+        self.assertEqual([photo.error for photo in result.photos], [
+            "missing_file", "unreadable_image", "model_error", None,
+        ])
+        self.assertEqual([photo.status for photo in result.photos], ["pending"] * 3 + ["analyzed"])
+        self.assertEqual(result.photos[-1].observations[0].photo_id, "front")
+        self.assertEqual(self.invoke.await_count, 2)
+
+    async def test_rejects_a_photo_reference_in_model_output(self):
+        self.write_catalog([self.photo])
+        self.invoke.return_value = {"observations": [
+            {"element": "degrau", "location": None, "photo_id": "other-property"},
+        ]}
+
+        result = await analysis.analyze_property_photos("a", self.catalog)
+
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.photos[0].error, "model_error")
+        self.assertEqual(result.photos[0].observations, [])

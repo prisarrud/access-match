@@ -1,15 +1,13 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
-ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+from ..config import load_ollama_base_url
 
 
 def load_extraction_model() -> ChatOllama:
-    load_dotenv(ENV_PATH)
+    base_url = load_ollama_base_url()
     return ChatOllama(
-        base_url=os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434",
+        base_url=base_url,
         model=os.getenv("OLLAMA_EXTRACTION_MODEL") or "llama3.2",
         temperature=0,
         num_ctx=8192,
@@ -17,7 +15,7 @@ def load_extraction_model() -> ChatOllama:
     )
 
 def load_index_config() -> tuple[str, OllamaEmbeddings]:
-    load_dotenv(ENV_PATH)
+    base_url = load_ollama_base_url()
 
     database_url = os.getenv("DATABASE_URL")
 
@@ -25,7 +23,7 @@ def load_index_config() -> tuple[str, OllamaEmbeddings]:
         raise ValueError("Set DATABASE_URL or copy .env.example to .env in the repository root.")
 
     embeddings = OllamaEmbeddings(
-        base_url=os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434",
+        base_url=base_url,
         model=os.getenv("OLLAMA_EMBEDDING_MODEL") or "nomic-embed-text",
         client_kwargs={"timeout": 120},
     )

@@ -6,7 +6,10 @@ from unittest.mock import patch
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 
+from api.app.comparison.rules import compare_width
+from api.app.comparison.schemas import ComparisonEvidence
 from api.app.documents.extraction import (
+    CANDIDATE_PROMPT_VERSION,
     ExtractionError,
     ModelExtraction,
     Observation,
@@ -14,6 +17,7 @@ from api.app.documents.extraction import (
     prepare_sources,
     validate_observations,
 )
+from api.app.documents.schemas import CandidateExtraction, CandidateObservation, EvidenceQuoteNotFound, UnknownEvidenceSource
 from api.app.properties.catalog import load_catalog
 
 class ExtractionValidationTests(TestCase):
@@ -49,6 +53,60 @@ class ExtractionValidationTests(TestCase):
         self.assertEqual(result.source.document_id, self.chunk.metadata["document_id"])
         self.assertEqual(result.source.page, 2)
         self.assertEqual(result.source.source_path, self.chunk.metadata["source_path"])
+
+    def test_candidate_anchors_page_and_measurement_to_the_selected_source(self):
+        document = self.property.documents[0]
+        memorial_id = f"pdf:{document.id}:2:1"
+        wrong_page_id = f"pdf:{document.id}:1:1"
+        project = Document(
+            page_content="Porta de entrada do hall. Vão livre previsto de 85 cm.",
+            metadata=self.chunk.metadata | {"document_id": document.id, "document_type": document.type,
+                                            "document_date": document.date, "source_path": document.path},
+        )
+        page_one = project.model_copy(update={"page_content": "Memorial descritivo",
+                                              "metadata": project.metadata | {"page": 1}})
+        measured = CandidateObservation(
+            **self.observation.model_dump(exclude={"source_id", "nature"}),
+            candidate_id=self.observation.source_id,
+        )
+        planned = measured.model_copy(update={
+            "candidate_id": memorial_id, "value": 0.85, "unit": "m", "quote": "Vão livre previsto de 85 cm.",
+        })
+        sources = prepare_sources(self.property, [self.chunk, page_one, project])
+        for candidate_id, error_type in (
+            (wrong_page_id, EvidenceQuoteNotFound),
+            ("pdf:unknown:2:1", UnknownEvidenceSource),
+            ("listing:edificio-ipe", UnknownEvidenceSource),
+        ):
+            with self.subTest(candidate_id=candidate_id), self.assertRaises(error_type):
+                validate_observations(
+                    CandidateExtraction(observations=[planned.model_copy(update={"candidate_id": candidate_id})]),
+                    "largura", sources,
+                )
+        other_door = measured.model_copy(update={"value": 90, "quote": "Vão livre medido de 90 cm."})
+        other_door_without_value = other_door.model_copy(update={"value": None, "unit": None})
+
+        async def respond(payload):
+            candidates = json.loads(payload["sources"])
+            ids = [candidate["candidate_id"] for candidate in candidates]
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertNotIn("source_id", candidates[0])
+            return CandidateExtraction(observations=[planned, measured, other_door, other_door_without_value])
+
+        results = asyncio.run(extract_evidence_batch(
+            self.property, {"largura": [self.chunk, page_one, project, project]},
+            invoke=respond, prompt_version=CANDIDATE_PROMPT_VERSION,
+        ))
+        observations = results["largura"].observations
+        self.assertEqual([(o.source_id, o.source.page, o.nature) for o in observations], [
+            (memorial_id, 2, "especificacao_projeto"),
+            (measured.candidate_id, 2, "observacao_vistoria"),
+        ])
+        result = compare_width(80, ComparisonEvidence(textual=observations))
+        self.assertEqual(result.status, "nao_atende")
+        self.assertEqual(result.referenceIds, [memorial_id, measured.candidate_id])
+        self.assertIn("78 cm", result.justification)
+        self.assertIn("85 cm", result.justification)
 
     def test_uses_catalog_nature_for_a_grounded_observation(self):
         [result] = self.validate(self.observation.model_copy(update={"nature": "declaracao_anuncio"}))
@@ -98,6 +156,53 @@ class ExtractionValidationTests(TestCase):
         paraphrased = alternate.model_copy(update={"quote": "A entrada mede 90 cm."})
         self.assertEqual(self.validate(paraphrased), [])
 
+    def test_accepts_equivalent_lengths_in_both_directions(self):
+        model_value = self.observation.model_copy(update={"value": 0.78, "unit": "m"})
+        [result] = self.validate(model_value)
+        self.assertEqual((result.value, result.unit, result.quote, result.source.page),
+                         (0.78, "m", self.observation.quote, 2))
+        for separator in (",", "."):
+            with self.subTest(separator=separator):
+                quote = f"Vão livre medido de 0{separator}78 m."
+                source = self.sources[1].model_copy(update={"text": self.entrance.replace(self.observation.quote, quote)})
+                item = self.observation.model_copy(update={"quote": quote})
+                [result] = validate_observations(ModelExtraction(observations=[item]), "largura", [source])
+                self.assertEqual((result.value, result.unit, result.quote), (78, "cm", quote))
+
+    def test_rejects_width_with_a_different_value_or_missing_unit(self):
+        with self.assertRaisesRegex(ExtractionError, "measurement was not found"):
+            self.validate(self.observation.model_copy(update={"value": 0.85, "unit": "m"}))
+        quote = "Vão livre medido de 78."
+        source = self.sources[1].model_copy(update={"text": self.entrance.replace(self.observation.quote, quote)})
+        item = self.observation.model_copy(update={"quote": quote})
+        with self.assertRaisesRegex(ExtractionError, "measurement was not found"):
+            validate_observations(ModelExtraction(observations=[item]), "largura", [source])
+
+    def test_rejects_an_equivalent_width_on_the_wrong_page_or_door(self):
+        wrong_page = self.chunk.model_copy(update={"metadata": self.chunk.metadata | {"page": 1},
+                                                 "page_content": self.other_door})
+        [_, first_page] = prepare_sources(self.property, [wrong_page])
+        wrong = self.observation.model_copy(update={"source_id": first_page.source_id, "value": 0.78, "unit": "m"})
+        with self.assertRaisesRegex(ExtractionError, "quote was not found"):
+            validate_observations(ModelExtraction(observations=[wrong]), "largura", [first_page])
+        other_door = wrong.model_copy(update={"source_id": self.observation.source_id, "value": 0.9,
+                                               "quote": "Vão livre medido de 90 cm."})
+        self.assertEqual(self.validate(other_door), [])
+        quote = "O valor de 78 cm corresponde à porta do depósito."
+        source = self.sources[1].model_copy(update={"text": self.entrance.replace(self.observation.quote, quote)})
+        item = self.observation.model_copy(update={"quote": quote})
+        self.assertEqual(validate_observations(ModelExtraction(observations=[item]), "largura", [source]), [])
+
+    def test_rejects_ambiguous_widths_in_a_single_quote(self):
+        for text, quote in (("Vão livre de 78 cm ou 85 cm.", "78 cm"),
+                            ("Vão livre de 75 a 78 cm.", "78 cm"),
+                            ("Vão livre de 75 ou 78 cm.", "78 cm"),
+                            ("Vão livre de 78 cm ou talvez 85 cm.", "Vão livre de 78 cm ou talvez 85 cm.")):
+            with self.subTest(text=text):
+                source = self.sources[1].model_copy(update={"text": self.entrance.replace(self.observation.quote, text)})
+                item = self.observation.model_copy(update={"quote": quote})
+                self.assertEqual(validate_observations(ModelExtraction(observations=[item]), "largura", [source]), [])
+
     def test_rejects_a_width_invented_for_a_qualitative_listing(self):
         invented = self.observation.model_copy(update={
             "source_id": self.sources[0].source_id, "nature": "declaracao_anuncio",
@@ -114,7 +219,7 @@ class ExtractionValidationTests(TestCase):
         })
         project_id = f"pdf:{document.id}:2:1"
         project_observation = self.observation.model_copy(update={
-            "value": 85, "source_id": project_id, "quote": "Vão livre previsto de 85 cm.",
+            "value": 0.85, "unit": "m", "source_id": project_id, "quote": "Vão livre previsto de 85 cm.",
         })
         invalid_step = self.observation.model_copy(update={
             "criterion": "degraus", "source_id": project_id, "quote": "O acesso é sem degraus.",
@@ -142,7 +247,7 @@ class ExtractionValidationTests(TestCase):
             project_id: ["largura"],
         })
         self.assertEqual([(item.value, item.nature, item.source.page) for item in result["largura"].observations], [
-            (78, "observacao_vistoria", 2), (85, "especificacao_projeto", 2),
+            (78, "observacao_vistoria", 2), (0.85, "especificacao_projeto", 2),
         ])
         self.assertEqual(result["largura"].observations[1].quote, "Vão livre previsto de 85 cm")
         self.assertIsInstance(result["degraus"], ExtractionError)

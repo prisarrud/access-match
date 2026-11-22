@@ -77,7 +77,10 @@ def validate():
                 refs = outcome["references"]
                 require(result.status == "a_confirmar" or refs, label)
                 require(not result.divergence or len({ref["sourceId"] for ref in refs}) >= 2, label)
-                for ref in refs:
+                optional = outcome.get("optionalReferences", [])
+                all_refs = refs + optional
+                require(len({(ref["sourceId"], ref.get("page")) for ref in all_refs}) == len(all_refs), label)
+                for ref in all_refs:
                     require(ref["sourceId"] in allowed, label)
                     _, pages = available[ref["sourceId"]]
                     if pages is None:

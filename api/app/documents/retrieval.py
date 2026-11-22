@@ -29,7 +29,9 @@ CRITERION_QUERIES = {
 class RetrievalError(RuntimeError):
     """The evidence search could not be completed."""
 
-async def retrieve_evidence(property_id: str, criterion: str) -> list[Document]:
+async def retrieve_evidence(
+    property_id: str, criterion: str, *, document_ids: list[str] | None = None,
+) -> list[Document]:
     """Return candidate passages with source metadata, or an empty list for no results."""
 
     if not property_id.strip():
@@ -37,6 +39,9 @@ async def retrieve_evidence(property_id: str, criterion: str) -> list[Document]:
 
     if criterion not in CRITERION_QUERIES:
         raise ValueError(f"Unsupported criterion: {criterion!r}.")
+
+    if document_ids == []:
+        return []
 
     try:
         database_url, embeddings = load_index_config()
@@ -53,11 +58,14 @@ async def retrieve_evidence(property_id: str, criterion: str) -> list[Document]:
 
         try:
             store = await create_vector_store(engine, embeddings)
+            filters = {"property_id": property_id, "embedding_model": embeddings.model}
+            if document_ids is not None:
+                filters["document_id"] = {"$in": document_ids}
 
             return await store.asimilarity_search(
                 CRITERION_QUERIES[criterion],
                 k=4,
-                filter={"property_id": property_id, "embedding_model": embeddings.model},
+                filter=filters,
             )
         finally:
             await engine.close()
@@ -65,8 +73,12 @@ async def retrieve_evidence(property_id: str, criterion: str) -> list[Document]:
         raise RetrievalError("Could not retrieve evidence from PostgreSQL and Ollama.") from exc
 
 async def retrieve_property_context(property_item: Property, criterion: Criterion) -> list[Document]:
+    if not property_item.documents:
+        return []
     try:
-        return await retrieve_evidence(property_item.id, criterion)
+        return await retrieve_evidence(
+            property_item.id, criterion, document_ids=[document.id for document in property_item.documents],
+        )
     except RetrievalError as exc:
         cause = exc.__cause__
         while cause is not None:

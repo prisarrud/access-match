@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from ..documents.context import DocumentContextProvider
-from ..documents.extraction import extract_evidence_batch, prepare_sources
+from ..documents.extraction import DEFAULT_PROMPT_VERSION, ExtractionInvoke, extract_evidence_batch, prepare_sources
 from ..documents.schemas import Criterion, ExtractionError
 from ..photos.analysis import analyze_property_photos
 from ..photos.schemas import PhotoAnalysis
@@ -31,6 +31,8 @@ def failure_kind(error: BaseException):
 
 async def collect_text_evidence(
     property_item: Property, provider: DocumentContextProvider,
+    *, criteria: tuple[Criterion, ...] = EVIDENCE_CRITERIA, invoke: ExtractionInvoke | None = None,
+    prompt_version: str = DEFAULT_PROMPT_VERSION,
 ) -> tuple[ComparisonEvidence, list[AnalysisIssue]]:
     sources = {source.source_id: source for source in prepare_sources(property_item, [])}
 
@@ -41,7 +43,7 @@ async def collect_text_evidence(
     chunks_by_criterion = {}
     retrieval_statuses = {}
 
-    for criterion in EVIDENCE_CRITERIA:
+    for criterion in criteria:
         chunks = []
         retrieval_status = "no_documents"
 
@@ -63,7 +65,10 @@ async def collect_text_evidence(
         retrieval_statuses[criterion] = retrieval_status
 
     try:
-        extractions = await extract_evidence_batch(property_item, chunks_by_criterion)
+        options = {"invoke": invoke} if invoke is not None else {}
+        if prompt_version != DEFAULT_PROMPT_VERSION:
+            options["prompt_version"] = prompt_version
+        extractions = await extract_evidence_batch(property_item, chunks_by_criterion, **options)
     except Exception as exc:
         extractions = dict.fromkeys(chunks_by_criterion, exc)
 

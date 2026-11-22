@@ -29,7 +29,13 @@ class ExtractionError(RuntimeError):
 
     sources: tuple[EvidenceSource, ...] = ()
 
-class Observation(BaseModel):
+class UnknownEvidenceSource(ExtractionError):
+    """The selected ID was not sent for this criterion."""
+
+class EvidenceQuoteNotFound(ExtractionError):
+    """The selected candidate does not contain the quote."""
+
+class ObservationFields(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     criterion: Criterion
@@ -37,14 +43,25 @@ class Observation(BaseModel):
     scope: Literal["entrada", "percurso", "outra_porta", "ambiguo"]
     value: float | None = Field(allow_inf_nan=False, strict=True)
     unit: Unit | None
+
+class Observation(ObservationFields):
     nature: Nature
     source_id: NonBlankText
+    quote: NonBlankText
+
+class CandidateObservation(ObservationFields):
+    candidate_id: NonBlankText
     quote: NonBlankText
 
 class ModelExtraction(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     observations: list[Observation]
+
+class CandidateExtraction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    observations: list[CandidateObservation]
 
 class GroundedObservation(Observation):
     source: EvidenceSource

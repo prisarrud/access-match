@@ -580,6 +580,11 @@
             "sourceId": "residencial-oliveira-foto-porta"
           }
         ],
+        "optionalReferences": [
+          {
+            "sourceId": "residencial-oliveira-foto-patamar"
+          }
+        ],
         "toConfirm": [
           "route_continuity",
           "alternate_access"

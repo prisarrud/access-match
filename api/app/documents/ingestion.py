@@ -20,7 +20,7 @@ def prepare_chunks(
     property_id: str,
     document: Document,
     catalog_dir: Path,
-    splitter: RecursiveCharacterTextSplitter,
+    splitter: RecursiveCharacterTextSplitter | None,
 ) -> list[Chunk]:
     chunks = []
     try:
@@ -31,7 +31,8 @@ def prepare_chunks(
             reader = PdfReader(stream)
             for page_number, page in enumerate(reader.pages, start=1):
                 text = (page.extract_text() or "").replace("\x00", " ").strip()
-                for chunk_index, content in enumerate(splitter.split_text(text), start=1):
+                contents = splitter.split_text(text) if splitter is not None else [text]
+                for chunk_index, content in enumerate(contents, start=1):
                     chunks.append(Chunk(
                         page_content=content,
                         metadata={

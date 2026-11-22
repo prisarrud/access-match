@@ -1,2 +1,4 @@
 .env
 .photo-analysis/
+/evaluation/__pycache__/
+/evaluation/results.json

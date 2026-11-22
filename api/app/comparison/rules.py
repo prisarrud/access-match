@@ -1,11 +1,11 @@
 import re
 from decimal import Decimal
 
+from ..documents.measurements import WIDTH_FACTORS, width_cm
+from ..documents.coverage import describes_full_route
 from ..documents.schemas import GroundedObservation
 from ..photos.schemas import Element
 from .schemas import ComparisonCriteria, ComparisonEvidence, CriterionResult
-
-WIDTH_FACTORS = {"mm": Decimal("0.1"), "cm": Decimal("1"), "m": Decimal("100")}
 
 STEP_FREE = re.compile(r"\b(?:sem degraus|não (?:há|tem|possui|apresenta) degraus|0 degraus)\b")
 
@@ -17,11 +17,9 @@ RAMP_PRESENT = re.compile(
 
 RAMP_ABSENT = re.compile(r"\b(?:sem rampa|não (?:há|tem|possui|apresenta) rampa|ausência de rampa)\b")
 
-FULL_ROUTE = re.compile(r"\b(?:da|desde a) calçada (?:até|à|a) (?:a )?(?:porta(?: de entrada)?|entrada)\b")
 
 ACCESS = re.compile(r"\b(?:entrada|acesso|trajeto|calçada)\b")
 
-SCOPE_LIMIT = re.compile(r"\b(?:exceto|fora do escopo|não (?:foi|foram) (?:avaliad[oa]s?|vistoriad[oa]s?))\b")
 
 OTHER_ACCESS = re.compile(r"\b(?:garagem|serviço|lateral|outro acesso)\b")
 
@@ -44,7 +42,7 @@ def compare_width(minimum_cm: float, evidence: ComparisonEvidence) -> CriterionR
     minimum_label = width_labels({minimum})
 
     widths = [
-        (item, Decimal(str(item.value)) * WIDTH_FACTORS[item.unit])
+        (item, width_cm(item.value, item.unit))
         for item in evidence.textual
         if is_entrance_width(item) and item.value is not None and item.value > 0 and item.unit in WIDTH_FACTORS
     ]
@@ -115,11 +113,9 @@ def photo_evidence(evidence: ComparisonEvidence, element: Element) -> tuple[list
 
 
 def confirms_full_route(item: GroundedObservation) -> bool:
-    quote = " ".join(item.quote.casefold().split())
-
     return (
         item.nature == "observacao_vistoria" and item.scope == "percurso"
-        and FULL_ROUTE.search(quote) is not None and SCOPE_LIMIT.search(quote) is None
+        and describes_full_route(item.quote)
     )
 
 

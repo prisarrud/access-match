@@ -34,9 +34,23 @@ make setup
 make dev
 ```
 
-### Validate evaluation cases
+### Run the demo
 
-`make validate-evaluation` checks the cases, their expected results, and source references. See the [evaluation guide](evaluation/README.md) to add a case.
+With Docker and Ollama running, `make prepare-demo` runs the full setup and starts the API and frontend. Open the [catalog](http://localhost:3000) and follow the [demo walkthrough](docs/demo.md).
+
+```bash
+make prepare-demo
+```
+
+### Run the evaluation
+
+After `make setup`, keep Ollama running and use `make evaluate` to compare two ways of reading PDFs across 20 test cases. One uses retrieved excerpts and the other uses full PDF text. The command prepares the test data, reuses the existing photo analyses, and saves the results to `evaluation/results.json`.
+
+```bash
+make evaluate
+```
+
+To check the cases, expected results, and source references on their own, run:
 
 ```bash
 make validate-evaluation

@@ -1,6 +1,6 @@
 import json
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi.testclient import TestClient
 from langchain_core.runnables import RunnableLambda
@@ -67,12 +67,12 @@ class ComparisonQuestionsTests(TestCase):
             ("current_entrance_width", question.upper()),
         ])
         with (
-            patch("api.app.comparison.routes.collect_comparison_evidence") as collect,
-            patch("api.app.comparison.service.retrieve_evidence") as retrieve,
+            patch("api.app.comparison.service.collect_comparison_evidence") as collect,
+            patch.object(app.state, "document_context", new=AsyncMock()) as retrieval,
             patch("api.app.comparison.service.analyze_property_photos") as visual,
         ):
             response = self.post({"minimumClearWidthCm": 80})
-            for operation in (collect, retrieve, visual):
+            for operation in (collect, retrieval, visual):
                 operation.assert_not_called()
 
         self.assertEqual(response.status_code, 200)

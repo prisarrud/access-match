@@ -1,24 +1,28 @@
 import asyncio
 import logging
-from psycopg import OperationalError
-from ..documents.extraction import ExtractionError, extract_evidence_batch, prepare_sources
-from ..documents.retrieval import CRITERION_QUERIES, retrieve_evidence
-from ..photos.analysis import PhotoAnalysis, analyze_property_photos
-from ..properties.schemas import Property
+from ..documents.context import DocumentContextProvider
+from ..documents.extraction import extract_evidence_batch, prepare_sources
+from ..documents.schemas import Criterion, ExtractionError
+from ..photos.analysis import analyze_property_photos
+from ..photos.schemas import PhotoAnalysis
+from ..properties.schemas import Property, PropertyCatalog
 from ..request_context import request_id
+from .store import ActiveComparison, ComparisonStore
+from .questions import generate_questions
 from .rules import compare_criteria
 from .schemas import (
     AnalysisIssue, ComparisonCriteria, ComparisonEvidence, ComparisonResponse, PropertyComparisonResult,
-    PropertyEvidence, TextSearch,
+    PropertyEvidence, TextSearch, ComparisonRequest, QuestionsRequest, QuestionsResponse,
 )
 
 logger = logging.getLogger(__name__)
+EVIDENCE_CRITERIA: tuple[Criterion, ...] = ("largura", "degraus", "rampas")
 
 def failure_kind(error: BaseException):
     cause = error
 
     while cause is not None:
-        if isinstance(cause, (OSError, OperationalError)):
+        if isinstance(cause, OSError):
             return "infrastructure"
         cause = cause.__cause__
 
@@ -26,7 +30,7 @@ def failure_kind(error: BaseException):
 
 
 async def collect_text_evidence(
-    property_item: Property,
+    property_item: Property, provider: DocumentContextProvider,
 ) -> tuple[ComparisonEvidence, list[AnalysisIssue]]:
     sources = {source.source_id: source for source in prepare_sources(property_item, [])}
 
@@ -37,13 +41,13 @@ async def collect_text_evidence(
     chunks_by_criterion = {}
     retrieval_statuses = {}
 
-    for criterion in CRITERION_QUERIES:
+    for criterion in EVIDENCE_CRITERIA:
         chunks = []
         retrieval_status = "no_documents"
 
         if property_item.documents:
             try:
-                chunks = await retrieve_evidence(property_item.id, criterion)
+                chunks = await provider(property_item, criterion)
             except Exception as exc:
                 retrieval_status = "failed"
                 logger.warning("Evidence retrieval failed request_id=%s property_id=%s criterion=%s error_type=%s",
@@ -124,8 +128,8 @@ async def collect_photo_evidence(
     return photos, issues
 
 
-async def collect_property_evidence(property_item: Property) -> PropertyEvidence:
-    evidence, text_issues = await collect_text_evidence(property_item)
+async def collect_property_evidence(property_item: Property, provider: DocumentContextProvider) -> PropertyEvidence:
+    evidence, text_issues = await collect_text_evidence(property_item, provider)
 
     evidence.visual, visual_issues = await collect_photo_evidence(property_item)
 
@@ -135,8 +139,10 @@ async def collect_property_evidence(property_item: Property) -> PropertyEvidence
     )
 
 
-async def collect_comparison_evidence(properties: tuple[Property, Property]) -> list[PropertyEvidence]:
-    return await asyncio.gather(*(collect_property_evidence(item) for item in properties))
+async def collect_comparison_evidence(
+    properties: tuple[Property, Property], provider: DocumentContextProvider,
+) -> list[PropertyEvidence]:
+    return await asyncio.gather(*(collect_property_evidence(item, provider) for item in properties))
 
 
 def calculate_comparison(
@@ -149,3 +155,48 @@ def calculate_comparison(
         )
         for item in properties
     ])
+
+class UnknownProperties(ValueError):
+    pass
+
+
+class ComparisonUnavailable(ValueError):
+    pass
+
+
+async def create_comparison(
+    catalog: PropertyCatalog, store: ComparisonStore, payload: ComparisonRequest,
+    provider: DocumentContextProvider,
+) -> ComparisonResponse:
+    properties = {item.id: item for item in catalog.properties}
+    first, second = (properties.get(property_id) for property_id in payload.propertyIds)
+    if first is None or second is None:
+        raise UnknownProperties
+    evidence = await collect_comparison_evidence((first, second), provider)
+    return calculate_comparison(store.save(evidence), evidence, payload.criteria)
+
+
+def require_active_comparison(
+    store: ComparisonStore, comparison_id: str, payload: ComparisonRequest,
+) -> ActiveComparison:
+    active = store.get(comparison_id)
+    if active is None or tuple(item.propertyId for item in active.properties) != payload.propertyIds:
+        raise ComparisonUnavailable
+    return active
+
+
+def recalculate_comparison(
+    store: ComparisonStore, comparison_id: str, payload: ComparisonRequest,
+) -> ComparisonResponse:
+    active = require_active_comparison(store, comparison_id, payload)
+    return calculate_comparison(comparison_id, active.properties, payload.criteria)
+
+
+async def create_questions(
+    store: ComparisonStore, comparison_id: str, payload: QuestionsRequest,
+) -> QuestionsResponse:
+    active = require_active_comparison(store, comparison_id, payload)
+    property_item = next(item for item in active.properties if item.propertyId == payload.propertyId)
+    questions = await generate_questions(property_item, payload.criteria)
+    require_active_comparison(store, comparison_id, payload)
+    return QuestionsResponse(propertyId=property_item.propertyId, questions=questions)

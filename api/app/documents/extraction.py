@@ -4,21 +4,12 @@ import json
 import re
 import sys
 from collections.abc import Mapping
-from datetime import date
-from typing import Literal
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, ConfigDict, Field
 from ..properties.catalog import load_catalog
-from ..properties.schemas import NonBlankText, Property, RelativeFile
+from ..properties.schemas import Property
 from .config import load_extraction_model
-from .retrieval import CRITERION_QUERIES, RetrievalError, retrieve_evidence
-
-Criterion = Literal["largura", "degraus", "rampas"]
-
-Nature = Literal["declaracao_anuncio", "especificacao_projeto", "observacao_vistoria"]
-
-Unit = Literal["mm", "cm", "m", "%", "graus", "degraus"]
+from .schemas import Criterion, EvidenceSource, ExtractionError, ExtractionResult, GroundedObservation, ModelExtraction, Observation
 
 ENTRANCE_DOOR_BEFORE_MEASURE = re.compile(
     r"\bporta\s+(?:de entrada|principal|de acesso principal)\b"
@@ -70,50 +61,6 @@ retorne observations vazio.
 """),
     ("human", "Critérios: {criteria}\nFontes (JSON):\n{sources}"),
 ])
-
-class EvidenceSource(BaseModel):
-    source_id: str
-    property_id: str
-    nature: Nature
-    text: str
-    document_id: str | None = None
-    document_type: Literal["memorial", "vistoria"] | None = None
-    document_date: date | None = None
-    source_path: RelativeFile | None = None
-    page: int | None = Field(default=None, gt=0)
-    chunk_index: int | None = Field(default=None, gt=0)
-
-class ExtractionError(RuntimeError):
-    """The extraction failed or returned an invalid observation."""
-
-    sources: tuple[EvidenceSource, ...] = ()
-
-class Observation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    criterion: Criterion
-    location: NonBlankText
-    scope: Literal["entrada", "percurso", "outra_porta", "ambiguo"]
-    value: float | None = Field(allow_inf_nan=False, strict=True)
-    unit: Unit | None
-    nature: Nature
-    source_id: NonBlankText
-    quote: NonBlankText
-
-class ModelExtraction(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    observations: list[Observation]
-
-class GroundedObservation(Observation):
-    source: EvidenceSource
-
-class ExtractionResult(BaseModel):
-    property_id: str
-    criterion: Criterion
-    status: Literal["evidence_found", "insufficient_evidence"]
-    sources: list[EvidenceSource]
-    observations: list[GroundedObservation]
 
 def prepare_sources(property_item: Property, chunks: list[Document]) -> list[EvidenceSource]:
     sources = [EvidenceSource(
@@ -271,7 +218,7 @@ async def extract_evidence_batch(
     criteria_by_id: dict[str, list[Criterion]] = {}
 
     for criterion, chunks in chunks_by_criterion.items():
-        if criterion not in CRITERION_QUERIES:
+        if criterion not in CRITERION_GUIDANCE:
             raise ValueError(f"Unsupported criterion: {criterion!r}.")
 
         try:
@@ -344,14 +291,18 @@ async def extract_property(property_id: str, criterion: Criterion) -> Extraction
     if property_item is None:
         raise ValueError(f"Unknown property: {property_id!r}.")
 
+    from .retrieval import retrieve_evidence
+
     chunks = await retrieve_evidence(property_item.id, criterion) if property_item.documents else []
 
     return await extract_evidence(property_item, criterion, chunks)
 
 def main() -> int:
+    from .retrieval import RetrievalError
+
     parser = argparse.ArgumentParser(description="Inspect retrieved text and extracted evidence.")
     parser.add_argument("property_id")
-    parser.add_argument("criterion", choices=CRITERION_QUERIES)
+    parser.add_argument("criterion", choices=CRITERION_GUIDANCE)
     args = parser.parse_args()
 
     try:

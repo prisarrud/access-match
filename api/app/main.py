@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from .comparison.routes import router as comparison_router
 from .comparison.store import ComparisonStore
+from .documents.retrieval import retrieve_property_context
 from .photos.analysis import analyze_photos
 from .properties.catalog import DEFAULT_CATALOG_PATH, CatalogLoadError, load_catalog
 from .properties.routes import router as properties_router
@@ -38,6 +39,7 @@ async def refresh_catalog_photos(application: FastAPI) -> None:
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     application.state.catalog = load_catalog(DEFAULT_CATALOG_PATH)
     application.state.comparisons = ComparisonStore()
+    application.state.document_context = retrieve_property_context
     preparation = asyncio.create_task(refresh_catalog_photos(application))
     try:
         yield

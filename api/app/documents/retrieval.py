@@ -4,6 +4,9 @@ import json
 import sys
 from langchain_core.documents import Document
 from langchain_postgres import PGEngine
+from psycopg import OperationalError
+from ..properties.schemas import Property
+from .schemas import Criterion
 from .config import load_index_config
 from .vector_store import create_vector_store
 
@@ -60,6 +63,18 @@ async def retrieve_evidence(property_id: str, criterion: str) -> list[Document]:
             await engine.close()
     except Exception as exc:
         raise RetrievalError("Could not retrieve evidence from PostgreSQL and Ollama.") from exc
+
+async def retrieve_property_context(property_item: Property, criterion: Criterion) -> list[Document]:
+    try:
+        return await retrieve_evidence(property_item.id, criterion)
+    except RetrievalError as exc:
+        cause = exc.__cause__
+        while cause is not None:
+            if isinstance(cause, OperationalError):
+                raise OSError("Document index unavailable.") from exc
+            cause = cause.__cause__
+        raise
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Inspect candidate evidence from catalog PDFs.")

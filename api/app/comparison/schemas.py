@@ -1,7 +1,7 @@
 from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
-from ..documents.extraction import Criterion, EvidenceSource, GroundedObservation
-from ..photos.analysis import Confirmation, PhotoAnalysis
+from ..documents.schemas import Criterion, EvidenceSource, GroundedObservation
+from ..photos.schemas import Confirmation, PhotoAnalysis
 from ..properties.schemas import NonBlankText
 
 PendingConfirmation = Confirmation | Literal["current_entrance_width"]

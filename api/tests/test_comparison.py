@@ -3,12 +3,17 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 from langchain_core.documents import Document
+from langchain_core.runnables import RunnableLambda
+from pypdf import PdfReader
 
 from api.app.comparison.rules import compare_ramp, compare_steps, compare_width
 from api.app.comparison.schemas import ComparisonEvidence, PropertyEvidence, TextSearch
 from api.app.comparison.store import ComparisonStore
 from api.app.documents.extraction import EvidenceSource, ExtractionError, ExtractionResult, GroundedObservation
 from api.app.main import app
+from api.app.documents.schemas import ModelExtraction, Observation
+from api.app.documents.retrieval import retrieve_property_context
+from api.app.properties.catalog import DEFAULT_CATALOG_PATH
 from api.app.photos.analysis import PhotoAnalysis, PhotoObservation, PropertyPhotoAnalysis
 
 PROPERTY_B = "residencial-oliveira"
@@ -141,7 +146,7 @@ class ComparisonEndpointTests(TestCase):
             (PROPERTY_IDS, {"minimumClearWidthCm": -80}, 422),
             (PROPERTY_IDS, {"minimumClearWidthCm": "80"}, 422),
         ]
-        with patch("api.app.comparison.routes.collect_comparison_evidence") as compare:
+        with patch("api.app.comparison.service.collect_comparison_evidence") as compare:
             for ids, criteria, status in cases:
                 with self.subTest(ids=ids, criteria=criteria):
                     result = self.client.post("/comparisons", json={"propertyIds": ids, "criteria": criteria})
@@ -160,8 +165,7 @@ class ComparisonEndpointTests(TestCase):
             ])
 
         with (
-            patch("api.app.comparison.service.retrieve_evidence", new_callable=AsyncMock,
-                  side_effect=ConnectionError("Database offline")),
+            patch.object(app.state, "document_context", new=AsyncMock(side_effect=ConnectionError("Database offline"))),
             patch("api.app.comparison.service.extract_evidence_batch", new_callable=AsyncMock,
                   side_effect=ExtractionError("Invalid model output")),
             patch("api.app.comparison.service.analyze_property_photos", side_effect=visual),
@@ -195,7 +199,7 @@ class ComparisonEndpointTests(TestCase):
 
     def test_preserves_a_document_measurement_when_all_visual_analysis_fails(self):
         with (
-            patch("api.app.comparison.service.retrieve_evidence", new_callable=AsyncMock, return_value=[]),
+            patch.object(app.state, "document_context", new=AsyncMock(return_value=[])),
             patch("api.app.comparison.service.extract_evidence_batch", side_effect=extract_width_batch),
             patch("api.app.comparison.service.analyze_property_photos", side_effect=ConnectionError("Offline")),
             self.assertLogs("api.app.comparison.service", level="WARNING"),
@@ -212,7 +216,7 @@ class ComparisonEndpointTests(TestCase):
         self.assertEqual(second["issues"][0]["kind"], "infrastructure")
 
     def test_recalculation_uses_all_collected_evidence_without_model_calls(self):
-        async def retrieve(property_id, criterion):
+        async def retrieve(property_item, criterion):
             return [Document(page_content="Vão livre medido de 78 cm.")] if criterion == "largura" else []
 
         async def visual(property_id):
@@ -224,7 +228,7 @@ class ComparisonEndpointTests(TestCase):
             ])
 
         with (
-            patch("api.app.comparison.service.retrieve_evidence", side_effect=retrieve) as retrieval,
+            patch.object(app.state, "document_context", new=AsyncMock(side_effect=retrieve)) as retrieval,
             patch("api.app.comparison.service.extract_evidence_batch", side_effect=extract_width_batch) as extraction,
             patch("api.app.comparison.service.analyze_property_photos", side_effect=visual) as photos,
         ):
@@ -275,6 +279,67 @@ class ComparisonEndpointTests(TestCase):
             for integration in (retrieval, extraction, photos):
                 integration.assert_not_awaited()
 
+    def test_preloaded_pdf_pages_use_the_same_extraction_and_rules(self):
+        self.assertIs(app.state.document_context, retrieve_property_context)
+        oliveira = next(item for item in app.state.catalog.properties if item.id == PROPERTY_B)
+        pages = []
+        observations = []
+        for document in oliveira.documents:
+            page = PdfReader(DEFAULT_CATALOG_PATH.parent / document.path).pages[1]
+            pages.append(Document(page_content=page.extract_text(), metadata={
+                "property_id": oliveira.id, "document_id": document.id, "document_type": document.type,
+                "source_path": document.path, "page": 2, "chunk_index": 1,
+            }))
+            measured = document.type == "vistoria"
+            value = 78 if measured else 85
+            quote = ("Vão livre de passagem medido na vistoria: 78 cm" if measured
+                     else "Vão livre de passagem previsto em projeto: 85 cm")
+            observations.append(Observation.model_validate({
+                "criterion": "largura", "location": "Porta de entrada do hall", "scope": "entrada",
+                "value": value, "unit": "cm",
+                "nature": "observacao_vistoria" if measured else "especificacao_projeto",
+                "source_id": f"pdf:{document.id}:2:1", "quote": quote,
+            }))
+
+        provider = AsyncMock(side_effect=lambda item, criterion: pages if item.id == PROPERTY_B and criterion == "largura" else [])
+        prompts = []
+
+        def respond(prompt):
+            prompts.append(prompt)
+            return ModelExtraction(observations=observations if PROPERTY_B in prompt.messages[-1].content else [])
+
+        with (
+            patch.object(app.state, "document_context", new=provider),
+            patch("api.app.documents.extraction.load_extraction_model") as model,
+            patch("api.app.comparison.service.analyze_property_photos", new_callable=AsyncMock,
+                  return_value=PropertyPhotoAnalysis(property_id=PROPERTY_B, status="complete", photos=[])) as photos,
+        ):
+            model.return_value.with_structured_output.return_value = RunnableLambda(respond)
+            initial = self.client.post("/comparisons", json={
+                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 75},
+            })
+            self.assertEqual(initial.status_code, 200)
+            comparison = initial.json()
+            before = comparison["properties"][1]
+            self.assertEqual(before["results"][0]["status"], "atende")
+            self.assertEqual({(item["value"], item["source"]["document_type"], item["source"]["page"])
+                              for item in before["evidence"]["textual"]}, {(78, "vistoria", 2), (85, "memorial", 2)})
+            self.assertEqual(set(before["results"][0]["referenceIds"]),
+                             {item.source_id for item in observations})
+            self.assertEqual(len(prompts), 2)
+            self.assertEqual(provider.await_count, 3)
+
+            updated = self.client.post(f'/comparisons/{comparison["comparisonId"]}/recalculate', json={
+                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 80},
+            })
+            self.assertEqual(updated.status_code, 200)
+            after = updated.json()["properties"][1]
+            self.assertEqual(after["results"][0]["status"], "nao_atende")
+            self.assertEqual(after["results"][0]["referenceIds"], before["results"][0]["referenceIds"])
+            self.assertEqual(len(prompts), 2)
+            self.assertEqual(provider.await_count, 3)
+            self.assertEqual(photos.await_count, 2)
+
     def test_expired_or_unavailable_reference_does_not_start_new_analysis(self):
         now = [0.0]
         app.state.comparisons = ComparisonStore(ttl_seconds=5, clock=lambda: now[0])
@@ -283,7 +348,7 @@ class ComparisonEndpointTests(TestCase):
             for property_id in PROPERTY_IDS
         ])
         request = {"propertyIds": PROPERTY_IDS, "criteria": {"ramp": True}}
-        with patch("api.app.comparison.routes.collect_comparison_evidence") as collect:
+        with patch("api.app.comparison.service.collect_comparison_evidence") as collect:
             self.assertEqual(self.client.post(f"/comparisons/{reference}/recalculate", json=request).status_code, 200)
             now[0] = 5.0
             for comparison_id in (reference, "unavailable"):

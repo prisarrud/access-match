@@ -1,8 +1,8 @@
 import re
 from decimal import Decimal
 
-from ..documents.extraction import GroundedObservation
-from ..photos.analysis import Element
+from ..documents.schemas import GroundedObservation
+from ..photos.schemas import Element
 from .schemas import ComparisonCriteria, ComparisonEvidence, CriterionResult
 
 WIDTH_FACTORS = {"mm": Decimal("0.1"), "cm": Decimal("1"), "m": Decimal("100")}

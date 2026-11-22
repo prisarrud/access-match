@@ -2,6 +2,10 @@
 
 AccessMatch helps wheelchair users compare the route from the sidewalk to a property's entrance before booking a viewing. It focuses on steps, ramps, and clear passage width.
 
+![AccessMatch property catalog](docs/app.png)
+
+See the [architecture overview](docs/architecture.md) for how the application works.
+
 ## Prerequisites
 
 - Make, Python 3.11 or later, and Node.js 20.9 or later with npm.

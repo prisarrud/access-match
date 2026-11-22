@@ -15,6 +15,7 @@ from api.app.photos.analysis import PhotoAnalysis, PhotoObservation, VisiblePart
 
 class ComparisonQuestionsTests(TestCase):
     def setUp(self):
+        self.enterContext(patch("api.app.main.refresh_catalog_photos"))
         self.client = self.enterContext(TestClient(app))
         self.ids = ["edificio-ipe", "residencial-oliveira"]
         partial_photo = summarize_photo(
@@ -98,9 +99,10 @@ class ComparisonQuestionsTests(TestCase):
 
     def test_generation_error_leaves_the_active_comparison_available(self):
         self.model([("current_entrance_width", "A porta tem 80 cm.")])
-        with self.assertLogs("api.app.comparison.routes", level="WARNING"):
+        with self.assertLogs("api.app.comparison.routes", level="WARNING") as logs:
             response = self.post({"minimumClearWidthCm": 80})
         self.assertEqual(response.status_code, 503)
+        self.assertIn(f"request_id={response.headers['X-Request-ID']}", logs.output[0])
         recalculated = self.client.post(f"/comparisons/{self.comparison_id}/recalculate", json={
             "propertyIds": self.ids, "criteria": {"stepFree": True},
         })

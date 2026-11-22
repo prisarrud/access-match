@@ -1,11 +1,16 @@
+import asyncio
+import json
 from unittest import TestCase
+from unittest.mock import patch
 
 from langchain_core.documents import Document
+from langchain_core.runnables import RunnableLambda
 
 from api.app.documents.extraction import (
     ExtractionError,
     ModelExtraction,
     Observation,
+    extract_evidence_batch,
     prepare_sources,
     validate_observations,
 )
@@ -100,3 +105,52 @@ class ExtractionValidationTests(TestCase):
         })
         with self.assertRaisesRegex(ExtractionError, "measurement was not found"):
             self.validate(invented)
+
+    def test_batches_shared_sources_and_validates_references_against_each_criterion(self):
+        document = self.property.documents[0]
+        project = Document(page_content="3.1 Porta de entrada do hall — PE-01\nVão livre previsto de 85 cm, medido no projeto.", metadata={
+            **self.chunk.metadata, "document_id": document.id, "document_type": document.type,
+            "document_date": document.date, "source_path": document.path,
+        })
+        project_id = f"pdf:{document.id}:2:1"
+        project_observation = self.observation.model_copy(update={
+            "value": 85, "source_id": project_id, "quote": "Vão livre previsto de 85 cm.",
+        })
+        invalid_step = self.observation.model_copy(update={
+            "criterion": "degraus", "source_id": project_id, "quote": "O acesso é sem degraus.",
+            "value": None, "unit": None,
+        })
+        invalid_width = self.observation.model_copy(update={"source_id": "pdf:unknown:2:1"})
+        prompts = []
+
+        def respond(prompt):
+            prompts.append(json.loads(prompt.messages[-1].content.split("Fontes (JSON):\n", 1)[1]))
+            return ModelExtraction(observations=[self.observation, project_observation, invalid_width, invalid_step])
+
+        with patch("api.app.documents.extraction.load_extraction_model") as load:
+            load.return_value.with_structured_output.return_value = RunnableLambda(respond)
+            result = asyncio.run(extract_evidence_batch(self.property, {
+                "largura": [self.chunk, project, self.chunk], "degraus": [self.chunk], "rampas": [],
+            }))
+
+        load.assert_called_once()
+        [sources] = prompts
+        self.assertEqual(len(sources), 3)
+        self.assertEqual({item["source_id"]: item["criteria"] for item in sources}, {
+            self.sources[0].source_id: ["largura", "degraus", "rampas"],
+            self.sources[1].source_id: ["largura", "degraus"],
+            project_id: ["largura"],
+        })
+        self.assertEqual([(item.value, item.nature, item.source.page) for item in result["largura"].observations], [
+            (78, "observacao_vistoria", 2), (85, "especificacao_projeto", 2),
+        ])
+        self.assertEqual(result["largura"].observations[1].quote, "Vão livre previsto de 85 cm")
+        self.assertIsInstance(result["degraus"], ExtractionError)
+        self.assertEqual(result["rampas"].status, "insufficient_evidence")
+
+    def test_a_step_free_claim_is_not_qualitative_width_evidence(self):
+        source = self.sources[0].model_copy(update={"text": "A entrada do prédio é sem degraus."})
+        width = self.observation.model_copy(update={
+            "source_id": source.source_id, "quote": source.text, "value": None, "unit": None,
+        })
+        self.assertEqual(validate_observations(ModelExtraction(observations=[width]), "largura", [source]), [])

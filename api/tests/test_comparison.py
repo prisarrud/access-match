@@ -28,6 +28,21 @@ def measurement(source_id, document_type, value, unit="cm", scope="entrada"):
     )
 
 
+async def extract_width_batch(property_item, chunks_by_criterion):
+    results = {}
+    for criterion in chunks_by_criterion:
+        observations = (
+            [measurement("vistoria", "vistoria", 78)]
+            if property_item.id == PROPERTY_B and criterion == "largura" else []
+        )
+        results[criterion] = ExtractionResult(
+            property_id=property_item.id, criterion=criterion,
+            status="evidence_found" if observations else "insufficient_evidence",
+            sources=[item.source for item in observations], observations=observations,
+        )
+    return results
+
+
 class ComparisonRulesTests(TestCase):
     def test_prefers_inspection_and_keeps_project_measurement(self):
         evidence = ComparisonEvidence(textual=[
@@ -112,6 +127,7 @@ class ComparisonRulesTests(TestCase):
 
 class ComparisonEndpointTests(TestCase):
     def setUp(self):
+        self.enterContext(patch("api.app.main.refresh_catalog_photos"))
         self.client = self.enterContext(TestClient(app))
 
     def test_rejects_invalid_requests_before_analysis(self):
@@ -146,7 +162,7 @@ class ComparisonEndpointTests(TestCase):
         with (
             patch("api.app.comparison.service.retrieve_evidence", new_callable=AsyncMock,
                   side_effect=ConnectionError("Database offline")),
-            patch("api.app.comparison.service.extract_evidence", new_callable=AsyncMock,
+            patch("api.app.comparison.service.extract_evidence_batch", new_callable=AsyncMock,
                   side_effect=ExtractionError("Invalid model output")),
             patch("api.app.comparison.service.analyze_property_photos", side_effect=visual),
             self.assertLogs("api.app.comparison.service", level="WARNING"),
@@ -178,20 +194,9 @@ class ComparisonEndpointTests(TestCase):
                 self.assertEqual(response.json()["detail"][0]["loc"][-1], "minimumClearWidthCm")
 
     def test_preserves_a_document_measurement_when_all_visual_analysis_fails(self):
-        async def extract(property_item, criterion, chunks):
-            observations = (
-                [measurement("vistoria", "vistoria", 78)]
-                if property_item.id == PROPERTY_B and criterion == "largura" else []
-            )
-            return ExtractionResult(
-                property_id=property_item.id, criterion=criterion,
-                status="evidence_found" if observations else "insufficient_evidence",
-                sources=[item.source for item in observations], observations=observations,
-            )
-
         with (
             patch("api.app.comparison.service.retrieve_evidence", new_callable=AsyncMock, return_value=[]),
-            patch("api.app.comparison.service.extract_evidence", side_effect=extract),
+            patch("api.app.comparison.service.extract_evidence_batch", side_effect=extract_width_batch),
             patch("api.app.comparison.service.analyze_property_photos", side_effect=ConnectionError("Offline")),
             self.assertLogs("api.app.comparison.service", level="WARNING"),
         ):
@@ -210,17 +215,6 @@ class ComparisonEndpointTests(TestCase):
         async def retrieve(property_id, criterion):
             return [Document(page_content="Vão livre medido de 78 cm.")] if criterion == "largura" else []
 
-        async def extract(property_item, criterion, chunks):
-            observations = (
-                [measurement("vistoria", "vistoria", 78)]
-                if property_item.id == PROPERTY_B and criterion == "largura" else []
-            )
-            return ExtractionResult(
-                property_id=property_item.id, criterion=criterion,
-                status="evidence_found" if observations else "insufficient_evidence",
-                sources=[item.source for item in observations], observations=observations,
-            )
-
         async def visual(property_id):
             photo_id = f"{property_id}-photo"
             return PropertyPhotoAnalysis(property_id=property_id, status="complete", photos=[
@@ -231,7 +225,7 @@ class ComparisonEndpointTests(TestCase):
 
         with (
             patch("api.app.comparison.service.retrieve_evidence", side_effect=retrieve) as retrieval,
-            patch("api.app.comparison.service.extract_evidence", side_effect=extract) as extraction,
+            patch("api.app.comparison.service.extract_evidence_batch", side_effect=extract_width_batch) as extraction,
             patch("api.app.comparison.service.analyze_property_photos", side_effect=visual) as photos,
         ):
             original = self.client.post("/comparisons", json={
@@ -243,7 +237,9 @@ class ComparisonEndpointTests(TestCase):
             self.assertEqual(first["results"][0]["status"], "a_confirmar")
             self.assertEqual(second["results"][0]["status"], "atende")
             self.assertEqual(retrieval.await_count, 3)
-            self.assertEqual(extraction.await_count, 6)
+            self.assertEqual(extraction.await_count, 2)
+            for call in extraction.await_args_list:
+                self.assertEqual(set(call.args[1]), {"largura", "degraus", "rampas"})
             self.assertEqual(photos.await_count, 2)
             self.assertEqual({item["retrieval"] for item in first["evidence"]["textSearches"]}, {"no_documents"})
             self.assertEqual(

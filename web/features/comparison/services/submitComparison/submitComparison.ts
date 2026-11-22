@@ -16,6 +16,8 @@ export async function submitComparison(
     return { status: 'unavailable' }
   }
 
+  const requestId = crypto.randomUUID()
+
   try {
     const path = comparisonId === undefined
       ? 'comparisons'
@@ -23,7 +25,7 @@ export async function submitComparison(
 
     const response = await fetch(new URL(path, `${baseUrl.replace(/\/+$/, '')}/`), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
       body: JSON.stringify(request),
       cache: 'no-store',
       signal: AbortSignal.timeout(comparisonId === undefined ? 300_000 : 10_000),

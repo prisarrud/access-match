@@ -4,7 +4,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from ..properties.schemas import PropertyCatalog
+from ..request_context import request_context, request_id
 from .questions import QuestionsError, generate_questions
 from .schemas import ComparisonRequest, ComparisonResponse, QuestionsRequest, QuestionsResponse
 from .service import calculate_comparison, collect_comparison_evidence
@@ -17,14 +19,20 @@ class ComparisonRoute(APIRoute):
         handler = super().get_route_handler()
 
         async def handle(request: Request):
-            try:
-                return await handler(request)
-            except RequestValidationError as error:
-                detail = [
-                    {key: item[key] for key in ("loc", "msg", "type")}
-                    for item in error.errors()
-                ]
-                return JSONResponse(status_code=422, content={"detail": detail})
+            with request_context(request.headers.get("X-Request-ID")) as identifier:
+                try:
+                    response = await handler(request)
+                except RequestValidationError as error:
+                    detail = [
+                        {key: item[key] for key in ("loc", "msg", "type")}
+                        for item in error.errors()
+                    ]
+                    response = JSONResponse(status_code=422, content={"detail": detail})
+                except StarletteHTTPException as error:
+                    error.headers = {**(error.headers or {}), "X-Request-ID": identifier}
+                    raise
+                response.headers["X-Request-ID"] = identifier
+                return response
 
         return handle
 
@@ -44,9 +52,7 @@ async def create_comparison(payload: ComparisonRequest, request: Request) -> Com
         raise HTTPException(status_code=404, detail="Um ou mais imóveis da seleção não estão no catálogo.")
 
     evidence = await collect_comparison_evidence((first, second))
-
     store: ComparisonStore = request.app.state.comparisons
-
     comparison_id = store.save(evidence)
 
     return calculate_comparison(comparison_id, evidence, payload.criteria)
@@ -56,7 +62,6 @@ def require_active_comparison(
     store: ComparisonStore, comparison_id: str, payload: ComparisonRequest,
 ) -> ActiveComparison:
     active = store.get(comparison_id)
-
     if active is None or tuple(item.propertyId for item in active.properties) != payload.propertyIds:
         raise HTTPException(
             status_code=410, detail="Esta análise expirou ou não está disponível para estes imóveis.",
@@ -82,7 +87,8 @@ async def create_questions(comparison_id: str, payload: QuestionsRequest, reques
     try:
         questions = await generate_questions(property_item, payload.criteria)
     except QuestionsError as exc:
-        logger.warning("Question generation failed for %s", property_item.propertyId, exc_info=True)
+        logger.warning("Question generation failed request_id=%s property_id=%s error_type=%s",
+                       request_id(), property_item.propertyId, type(exc).__name__)
         raise HTTPException(status_code=503, detail="Não foi possível gerar as perguntas.") from exc
 
     require_active_comparison(store, comparison_id, payload)

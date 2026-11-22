@@ -1,13 +1,18 @@
+import asyncio
 import base64
 import json
+from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import monotonic, sleep
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
+from fastapi.testclient import TestClient
 from PIL import Image
 
+from api.app.main import app
 from api.app.photos import analysis
 
 class PhotoAnalysisTests(IsolatedAsyncioTestCase):
@@ -87,6 +92,139 @@ class PhotoAnalysisTests(IsolatedAsyncioTestCase):
         self.assertTrue(result.photos[2].infrastructure_failure)
         self.assertEqual(result.photos[-1].observations[0].photo_id, "front")
         self.assertEqual(self.invoke.await_count, 2)
+
+        self.invoke.side_effect = None
+        self.invoke.reset_mock()
+        retried = await analysis.analyze_property_photos("a", self.catalog)
+        self.assertEqual(retried.status, "partial")
+        self.assertEqual([photo.status for photo in retried.photos], ["pending", "pending", "analyzed", "analyzed"])
+        self.assertEqual(retried.photos[-1], result.photos[-1])
+        self.invoke.assert_awaited_once()
+
+    async def test_reuses_validated_observations_and_only_reprocesses_changed_photo(self):
+        second = self.folder / "second.jpg"
+        second.write_bytes(self.valid_photo.read_bytes())
+        self.write_catalog([self.photo, {**self.photo, "id": "second", "path": second.name}])
+        first = await analysis.analyze_property_photos("a", self.catalog)
+        folder = self.folder / ".photo-analysis"
+        entries = [analysis.PhotoCacheEntry.model_validate_json(path.read_bytes()) for path in folder.glob("*.json")]
+        self.assertEqual({item.key.photo_id for item in entries}, {"front", "second"})
+        self.assertTrue(all(item.key.property_id == "a" for item in entries))
+        self.assertTrue(all(item.key.file_sha256 == sha256(second.read_bytes()).hexdigest() for item in entries))
+        self.assertTrue(all(item.key.configuration.prompt_version for item in entries))
+
+        self.load_model.reset_mock()
+        self.coverage.reset_mock()
+        self.invoke.reset_mock()
+        again = await analysis.analyze_property_photos("a", self.catalog)
+        self.assertEqual(again, first)
+        self.load_model.assert_not_called()
+
+        image = Image.new("RGB", (16, 16), "white")
+        image.paste("black", (0, 0, 4, 16))
+        image.save(second)
+        self.invoke.side_effect = ConnectionError("Ollama unavailable")
+        failed = await analysis.analyze_property_photos("a", self.catalog)
+        self.assertEqual(failed.status, "partial")
+        self.assertEqual(failed.photos[0], first.photos[0])
+        self.assertEqual(failed.photos[1].status, "pending")
+        self.assertEqual(failed.photos[1].observations, [])
+        self.invoke.assert_awaited_once()
+
+        self.invoke.side_effect = None
+        self.coverage.reset_mock()
+        self.invoke.reset_mock()
+        self.invoke.return_value = {"observations": []}
+        changed = await analysis.analyze_property_photos("a", self.catalog)
+        self.assertEqual(changed.photos[0], first.photos[0])
+        self.assertEqual(changed.photos[1].observations, [])
+        self.coverage.assert_awaited_once()
+        self.invoke.assert_awaited_once()
+
+    async def test_prompt_or_model_change_requires_fresh_analysis(self):
+        self.write_catalog([self.photo])
+        await analysis.analyze_property_photos("a", self.catalog)
+        self.invoke.reset_mock()
+        with patch.object(analysis, "PROMPT", analysis.PROMPT + " Test prompt revision."):
+            await analysis.analyze_property_photos("a", self.catalog)
+            self.invoke.assert_awaited_once()
+
+        self.invoke.reset_mock()
+        with patch.dict(analysis.os.environ, {"OLLAMA_VISION_MODEL": "different-model"}):
+            await analysis.analyze_property_photos("a", self.catalog)
+            self.invoke.assert_awaited_once()
+
+    async def test_concurrent_requests_share_the_preparation(self):
+        self.write_catalog([self.photo])
+        coverage = self.coverage.return_value
+
+        async def yield_during_analysis(_messages):
+            await asyncio.sleep(0)
+            return coverage
+
+        self.coverage.side_effect = yield_during_analysis
+        first, second = await asyncio.gather(
+            analysis.analyze_property_photos("a", self.catalog),
+            analysis.analyze_property_photos("a", self.catalog),
+        )
+        self.assertEqual(first, second)
+        self.coverage.assert_awaited_once()
+        self.invoke.assert_awaited_once()
+
+    def test_background_prepares_catalog_updates_without_a_comparison(self):
+        self.write_catalog([self.photo])
+        independent = self.folder / "second.jpg"
+        independent.write_bytes(self.valid_photo.read_bytes())
+        catalog = json.loads(self.catalog.read_text())
+        catalog["properties"][1]["photos"][0]["path"] = independent.name
+        self.catalog.write_text(json.dumps(catalog), encoding="utf-8")
+        cache_dir = self.folder / ".photo-analysis"
+
+        def wait_for_entries(expected):
+            deadline = monotonic() + 3
+            while monotonic() < deadline:
+                entries = list(cache_dir.glob("*.json"))
+                if len(entries) == expected:
+                    return
+                sleep(0.01)
+            self.fail(f"Expected {expected} prepared entries, found {len(entries)}")
+
+        with (
+            patch("api.app.main.DEFAULT_CATALOG_PATH", self.catalog),
+            patch("api.app.main.PHOTO_REFRESH_INTERVAL_SECONDS", 0.01),
+            TestClient(app) as client,
+        ):
+            wait_for_entries(2)
+            image = Image.new("RGB", (16, 16), "black")
+            image.paste("white", (0, 0, 4, 16))
+            changed = self.folder / "changed.jpg"
+            image.save(changed)
+            changed.replace(self.valid_photo)
+            wait_for_entries(3)
+
+            catalog["properties"][0]["photos"].append({**self.photo, "id": "new-photo", "path": independent.name})
+            updated_catalog = self.folder / "properties-next.json"
+            updated_catalog.write_text(json.dumps(catalog), encoding="utf-8")
+            updated_catalog.replace(self.catalog)
+            wait_for_entries(4)
+            response = client.get("/properties")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual([photo["id"] for photo in response.json()[0]["photos"]], ["front", "new-photo"])
+
+        self.assertEqual(self.invoke.await_count, 4)
+
+    async def test_corrupt_cache_is_replaced_with_valid_observations(self):
+        self.write_catalog([self.photo])
+        first = await analysis.analyze_property_photos("a", self.catalog)
+        [path] = (self.folder / ".photo-analysis").glob("*.json")
+        path.write_text("{", encoding="utf-8")
+        self.invoke.reset_mock()
+
+        with self.assertLogs(analysis.__name__, level="WARNING"):
+            retried = await analysis.analyze_property_photos("a", self.catalog)
+        self.invoke.assert_awaited_once()
+        self.assertEqual(retried, first)
+        self.assertEqual(analysis.PhotoCacheEntry.model_validate_json(path.read_bytes()).analysis, first.photos[0])
 
     async def test_rejects_a_photo_reference_in_model_output(self):
         self.write_catalog([self.photo])

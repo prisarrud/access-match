@@ -2,10 +2,11 @@ PYTHON ?= python3
 API_PYTHON := api/.venv/bin/python
 API_BASE_URL ?= http://127.0.0.1:8000
 
-.PHONY: help setup db dev
+.PHONY: help setup db dev prepare-photos
 
 help:
-	@printf '%s\n' 'make setup  Install dependencies, download models, and index the demo PDFs' \
+	@printf '%s\n' 'make setup  Install dependencies, download models, index PDFs, and prepare photos' \
+		'make prepare-photos  Analyze and cache photos for the demo catalog' \
 		'make dev    Start PostgreSQL, the API, and the frontend'
 
 setup:
@@ -26,9 +27,13 @@ setup:
 		'    subprocess.run(["ollama", "pull", model], check=True)' | $(API_PYTHON) -
 	$(MAKE) db
 	$(API_PYTHON) -m api.app.documents.ingestion
+	$(MAKE) prepare-photos PROPERTY_ID=
 
 db:
 	docker compose up -d --wait postgres
+
+prepare-photos:
+	$(API_PYTHON) -m api.app.photos.analysis $${PROPERTY_ID:+-- "$$PROPERTY_ID"}
 
 dev: db
 	@$(API_PYTHON) -m uvicorn api.app.main:app --reload & api_pid=$$!; \

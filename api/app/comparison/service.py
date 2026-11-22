@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from psycopg import OperationalError
-from ..documents.extraction import ExtractionError, extract_evidence, prepare_sources
+from ..documents.extraction import ExtractionError, extract_evidence_batch, prepare_sources
 from ..documents.retrieval import CRITERION_QUERIES, retrieve_evidence
 from ..photos.analysis import PhotoAnalysis, analyze_property_photos
 from ..properties.schemas import Property
+from ..request_context import request_id
 from .rules import compare_criteria
 from .schemas import (
     AnalysisIssue, ComparisonCriteria, ComparisonEvidence, ComparisonResponse, PropertyComparisonResult,
@@ -33,6 +34,8 @@ async def collect_text_evidence(
 
     issues = []
     searches = []
+    chunks_by_criterion = {}
+    retrieval_statuses = {}
 
     for criterion in CRITERION_QUERIES:
         chunks = []
@@ -43,7 +46,8 @@ async def collect_text_evidence(
                 chunks = await retrieve_evidence(property_item.id, criterion)
             except Exception as exc:
                 retrieval_status = "failed"
-                logger.warning("Evidence retrieval failed for %s / %s", property_item.id, criterion, exc_info=True)
+                logger.warning("Evidence retrieval failed request_id=%s property_id=%s criterion=%s error_type=%s",
+                               request_id(), property_item.id, criterion, type(exc).__name__)
                 issues.append(AnalysisIssue(
                     stage="retrieval", kind=failure_kind(exc), criterion=criterion,
                     message="Não foi possível consultar os trechos dos PDFs para este critério.",
@@ -51,17 +55,26 @@ async def collect_text_evidence(
             else:
                 retrieval_status = "found" if chunks else "no_results"
 
-        try:
-            extraction = await extract_evidence(property_item, criterion, chunks)
-        except Exception as exc:
-            extraction_status = "failed"
-            if isinstance(exc, ExtractionError):
-                sources.update((source.source_id, source) for source in exc.sources)
+        chunks_by_criterion[criterion] = chunks
+        retrieval_statuses[criterion] = retrieval_status
 
-            logger.warning("Evidence extraction failed for %s / %s", property_item.id, criterion, exc_info=True)
+    try:
+        extractions = await extract_evidence_batch(property_item, chunks_by_criterion)
+    except Exception as exc:
+        extractions = dict.fromkeys(chunks_by_criterion, exc)
+
+    for criterion, retrieval_status in retrieval_statuses.items():
+        extraction = extractions[criterion]
+        if isinstance(extraction, Exception):
+            extraction_status = "failed"
+            if isinstance(extraction, ExtractionError):
+                sources.update((source.source_id, source) for source in extraction.sources)
+
+            logger.warning("Evidence extraction failed request_id=%s property_id=%s criterion=%s error_type=%s",
+                           request_id(), property_item.id, criterion, type(extraction).__name__)
 
             issues.append(AnalysisIssue(
-                stage="extraction", kind=failure_kind(exc), criterion=criterion,
+                stage="extraction", kind=failure_kind(extraction), criterion=criterion,
                 message="Não foi possível extrair observações textuais para este critério.",
             ))
         else:
@@ -82,7 +95,8 @@ async def collect_photo_evidence(
     try:
         analysis = await analyze_property_photos(property_item.id)
     except Exception as exc:
-        logger.warning("Visual analysis failed for %s", property_item.id, exc_info=True)
+        logger.warning("Visual analysis failed request_id=%s property_id=%s error_type=%s",
+                       request_id(), property_item.id, type(exc).__name__)
         return [], [AnalysisIssue(
             stage="visual", kind=failure_kind(exc), message="Não foi possível analisar as fotos deste imóvel.",
         )]
@@ -128,13 +142,10 @@ async def collect_comparison_evidence(properties: tuple[Property, Property]) -> 
 def calculate_comparison(
     comparison_id: str, properties: list[PropertyEvidence], criteria: ComparisonCriteria,
 ) -> ComparisonResponse:
-    return ComparisonResponse(
-        comparisonId=comparison_id,
-        properties=[
-            PropertyComparisonResult(
-                propertyId=item.propertyId, title=item.title, evidence=item.evidence, issues=item.issues,
-                results=compare_criteria(criteria, item.evidence),
-            )
-            for item in properties
-        ],
-    )
+    return ComparisonResponse(comparisonId=comparison_id, properties=[
+        PropertyComparisonResult(
+            propertyId=item.propertyId, title=item.title, evidence=item.evidence, issues=item.issues,
+            results=compare_criteria(criteria, item.evidence),
+        )
+        for item in properties
+    ])

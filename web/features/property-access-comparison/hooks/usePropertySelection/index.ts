@@ -1,1 +1,0 @@
-export { usePropertySelection } from './usePropertySelection'

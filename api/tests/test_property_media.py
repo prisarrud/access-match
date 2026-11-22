@@ -10,6 +10,7 @@ from api.app.main import app
 
 class PropertyMediaTests(TestCase):
     def setUp(self):
+        self.enterContext(patch("api.app.main.refresh_catalog_photos"))
         self.client = self.enterContext(TestClient(app))
 
     def properties(self):

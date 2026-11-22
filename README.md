@@ -20,7 +20,7 @@ Run these commands from the repository root.
 
 ### Set up the project
 
-`make setup` creates `.env` from [`.env.example`](.env.example) if needed, installs the API and frontend dependencies, downloads the configured Ollama models, starts PostgreSQL, and indexes the demo PDFs. Run it on a fresh checkout and when dependencies, models, or demo PDFs change.
+`make setup` creates `.env` from [`.env.example`](.env.example) if needed, installs the API and frontend dependencies, downloads the configured Ollama models, starts PostgreSQL, indexes the demo PDFs, and prepares all demo photos. Run it on a fresh checkout and when dependencies, models, or demo PDFs change.
 
 ```bash
 make setup

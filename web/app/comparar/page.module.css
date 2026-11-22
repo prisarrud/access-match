@@ -1,0 +1,8 @@
+.page {
+  width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), 65rem);
+  margin-inline: auto;
+  padding-block: clamp(1.25rem, 3vw, 2.5rem) 3rem;
+}
+.heading { margin-bottom: 1.75rem; }
+.heading h1 { font-size: clamp(2.25rem, 5vw, 3.75rem); line-height: 1.05; letter-spacing: -.045em; }
+.back { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: .65rem; color: var(--accent); font-weight: 700; text-underline-offset: .2em; }

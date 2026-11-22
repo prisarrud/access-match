@@ -1,0 +1,86 @@
+.intro {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-block: clamp(2.65rem, 6vw, 5rem);
+  background:
+    radial-gradient(ellipse at 94% 115%, rgb(204 148 249 / 0.27), transparent 60%),
+    linear-gradient(110deg, var(--hero) 15%, #432760 63%, #624081);
+  color: white;
+}
+
+.introContent {
+  max-width: 38rem;
+}
+
+.intro h1 {
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.intro p {
+  max-width: 34rem;
+  margin-top: 1rem;
+  color: #f0e9ff;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+
+.intro::before,
+.intro::after {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgb(230 202 255 / 0.42);
+  border-radius: 50% 50% 0 0 / 35% 35% 0 0;
+  transform: rotate(-14deg);
+  content: "";
+}
+
+.intro::before {
+  right: max(-5rem, calc((100% - 81rem) / 2));
+  bottom: -16rem;
+  width: clamp(22rem, 35vw, 34rem);
+  height: 35rem;
+  background: linear-gradient(145deg, rgb(235 198 255 / 0.18), rgb(174 113 222 / 0.03));
+}
+
+.intro::after {
+  right: max(-1rem, calc((100% - 70rem) / 2));
+  bottom: -17rem;
+  width: clamp(15rem, 26vw, 24rem);
+  height: 32rem;
+  background: linear-gradient(155deg, rgb(219 181 255 / 0.25), rgb(179 114 231 / 0.04));
+}
+
+.introContainer {
+  width: min(100% - 3rem, 72rem);
+  margin-inline: auto;
+}
+
+@media (max-width: 58rem) {
+  .intro::before,
+  .intro::after {
+    right: -11rem;
+    opacity: 0.56;
+  }
+}
+
+@media (max-width: 42rem) {
+  .introContainer { width: calc(100% - 2rem); }
+  .intro::before,
+  .intro::after {
+    right: -14rem;
+    opacity: 0.37;
+  }
+}
+
+.catalog {
+  width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), 65rem);
+  margin-inline: auto;
+  padding-block: clamp(1.75rem, 4vw, 3rem);
+}
+.heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; margin-bottom: 1.25rem; }
+.heading h2 { font-size: clamp(1.55rem, 3.5vw, 2.35rem); letter-spacing: -.035em; line-height: 1.1; }
+.heading p { color: var(--muted); font-size: .875rem; }

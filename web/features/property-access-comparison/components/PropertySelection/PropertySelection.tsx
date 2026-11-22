@@ -1,5 +1,8 @@
 'use client'
 
+import ui from '@/ui/shared.module.css'
+import styles from './PropertySelection.module.css'
+import layout from '../PropertyGrid.module.css'
 import { useSearchParams } from 'next/navigation'
 import type { SubmitEvent } from 'react'
 import { propertyQueryParam, selectionLimit } from '../../constants'
@@ -39,7 +42,7 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
 
   return (
     <>
-      <ul className='content-container property-grid' role='list'>
+      <ul className={layout.grid} role='list'>
         {properties.map((property) => {
           const selected = selectedIds.includes(property.id)
           const action = selected ? 'Remover da seleção' : 'Selecionar imóvel'
@@ -62,7 +65,7 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
                     <button
                       id={controlId}
                       type='submit'
-                      className='button button-secondary'
+                      className={`${ui.button} ${ui.outline}`}
                       disabled={!selected && selectedIds.length === selectionLimit}
                       aria-label={`${action}: ${property.title}`}
                     >
@@ -76,11 +79,11 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
         })}
       </ul>
 
-      <div className='selection-band'>
-        <form action='/comparar' method='get' className='content-container selection-bar'>
+      <div className={styles.band}>
+        <form action='/comparar' method='get' className={styles.bar}>
           <PropertyInputs ids={selectedIds} />
-          <div className='selection-summary'>
-            <div className='selection-meter' aria-hidden='true'>
+          <div className={styles.summary}>
+            <div className={styles.meter} aria-hidden='true'>
               <span data-filled={selectedIds.length >= 1} />
               <span data-filled={selectedIds.length === selectionLimit} />
             </div>
@@ -91,7 +94,7 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
           </div>
           <button
             type='submit'
-            className='button button-primary'
+            className={`${ui.button} ${ui.primary}`}
             disabled={selectedIds.length !== selectionLimit}
           >
             Comparar imóveis

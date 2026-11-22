@@ -1,0 +1,44 @@
+.panel {
+  display: grid;
+  justify-items: start;
+  gap: .65rem;
+  margin-block-start: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: #fff;
+}
+
+.panel p { color: var(--muted); }
+.panel p:empty { margin-block-start: -.65rem; }
+
+.progress {
+  position: relative;
+  inline-size: 5rem;
+  block-size: .3rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--accent-soft);
+}
+
+.progress::before {
+  display: block;
+  inline-size: 40%;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  content: '';
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .progress::before { animation: progress 1.35s ease-in-out infinite alternate; }
+}
+
+@keyframes progress {
+  to { transform: translateX(150%); }
+}
+
+.updating {
+  margin-block-start: 1rem;
+  color: var(--muted);
+}

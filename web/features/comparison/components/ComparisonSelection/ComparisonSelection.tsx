@@ -1,10 +1,9 @@
-import { Suspense } from 'react'
+import ui from '@/ui/shared.module.css'
 import {
   hasTwoPropertyIds, loadProperties, PropertyComparison, propertyQueryParam,
 } from '@/features/property-access-comparison'
 import { readComparisonSubmission } from '../../utils'
-import { ComparisonCriteriaForm } from '../ComparisonCriteriaForm'
-import { ComparisonResults } from '../ComparisonResults'
+import { ComparisonAnalysis } from './ComparisonAnalysis'
 
 type ComparisonSelectionProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -15,18 +14,18 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
   const ids = params[propertyQueryParam]
 
   if (!hasTwoPropertyIds(ids)) {
-    return <p className='notice'>Selecione dois imóveis no catálogo para comparar.</p>
+    return <p className={ui.notice}>Selecione dois imóveis no catálogo para comparar.</p>
   }
 
   if (ids[0] === ids[1]) {
-    return <p className='notice'>Selecione dois imóveis diferentes para comparar.</p>
+    return <p className={ui.notice}>Selecione dois imóveis diferentes para comparar.</p>
   }
 
   const properties = await loadProperties()
 
   if (properties === null) {
     return (
-      <p className='notice'>
+      <p className={ui.notice}>
         Não foi possível consultar o catálogo. Recarregue a página para tentar novamente.
       </p>
     )
@@ -36,7 +35,7 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
   const second = properties.find((property) => property.id === ids[1])
 
   if (!first || !second) {
-    return <p className='notice'>Um ou mais imóveis da seleção não estão no catálogo.</p>
+    return <p className={ui.notice}>Um ou mais imóveis da seleção não estão no catálogo.</p>
   }
 
   const submission = readComparisonSubmission(ids, params)
@@ -48,17 +47,13 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
     <>
       <PropertyComparison properties={[first, second]} />
 
-      <ComparisonCriteriaForm propertyIds={ids} submission={submission} comparisonId={comparisonId} />
-
-      {submission.status === 'valid' && (
-        <Suspense fallback={
-          <p className='notice' role='status'>
-            {comparisonId === undefined ? 'Analisando as fontes da comparação…' : 'Atualizando a comparação…'}
-          </p>
-        }>
-          <ComparisonResults submission={submission} comparisonId={comparisonId} catalogProperties={[first, second]} />
-        </Suspense>
-      )}
+      <ComparisonAnalysis
+        key={JSON.stringify([ids, submission.values, submission.status, comparisonId])}
+        propertyIds={ids}
+        initialSubmission={submission}
+        initialComparisonId={comparisonId}
+        catalogProperties={[first, second]}
+      />
     </>
   )
 }

@@ -1,3 +1,4 @@
+import ui from '@/ui/shared.module.css'
 import { loadProperties } from '../../services'
 import { PropertySelection } from '../PropertySelection'
 
@@ -6,14 +7,14 @@ export async function PropertyCatalog() {
 
   if (properties === null) {
     return (
-      <p className='content-container notice'>
+      <p className={ui.notice}>
         Não foi possível carregar o catálogo. Recarregue a página para tentar novamente.
       </p>
     )
   }
 
   if (properties.length === 0) {
-    return <p className='content-container notice'>O catálogo ainda não tem imóveis disponíveis.</p>
+    return <p className={ui.notice}>O catálogo ainda não tem imóveis disponíveis.</p>
   }
 
   return <PropertySelection properties={properties} />

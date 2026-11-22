@@ -1,10 +1,5 @@
-.evidence {
+.details {
   font-size: 0.875rem;
-}
-
-.details,
-.pending {
-  margin-block-start: 0.75rem;
 }
 
 .summary {
@@ -64,9 +59,4 @@
 
 .photo img {
   object-fit: contain;
-}
-
-.pending ul {
-  margin-block: 0.25rem 0;
-  padding-inline-start: 1.125rem;
 }

@@ -1,0 +1,64 @@
+.container { width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), 72rem); margin-inline: auto; }
+.notice { padding: 1.2rem 1.4rem; background: var(--accent-soft); border: 1px solid var(--line); border-radius: 1rem; }
+
+.button {
+  min-height: 3rem;
+  padding: 0.6rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary {
+  color: var(--accent);
+  background: white;
+  border-color: #9a7cbd;
+}
+
+.secondary:hover:enabled {
+  background: var(--accent-soft);
+}
+
+.outline {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
+}
+
+.outline:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .outline:hover:enabled:not([aria-disabled='true']) {
+    background: var(--accent);
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .outline {
+    transition: background-color .15s ease, color .15s ease;
+  }
+}
+
+.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.primary:hover:enabled {
+  background: var(--accent-hover);
+}
+
+.button:disabled {
+  color: #584f63;
+  background: #d9c6e9;
+  border-color: #b9a1d0;
+  cursor: not-allowed;
+}
+
+@media (max-width: 42rem) { .primary { width: 100%; } }

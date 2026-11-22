@@ -1,3 +1,4 @@
+import layout from '../PropertyGrid.module.css'
 import type { PropertySummary } from '../../types'
 import { PropertyCard } from '../PropertyCard'
 
@@ -7,7 +8,7 @@ type ComparisonProps = {
 
 export function PropertyComparison({ properties }: ComparisonProps) {
   return (
-    <ul className='property-grid' role='list' aria-label='Imóveis selecionados'>
+    <ul className={layout.grid} role='list' aria-label='Imóveis selecionados'>
       {properties.map((property) => (
         <li key={property.id}>
           <PropertyCard property={property} />

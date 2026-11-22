@@ -6,7 +6,7 @@ type SubmissionResult =
   | { status: 'error' }
 
 export async function submitComparison(
-  request: ComparisonRequest, comparisonId?: string,
+  request: ComparisonRequest, comparisonId?: string, signal?: AbortSignal,
 ): Promise<SubmissionResult> {
   const baseUrl = process.env.API_BASE_URL
 
@@ -28,7 +28,10 @@ export async function submitComparison(
       headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
       body: JSON.stringify(request),
       cache: 'no-store',
-      signal: AbortSignal.timeout(comparisonId === undefined ? 300_000 : 10_000),
+      signal: AbortSignal.any([
+        AbortSignal.timeout(comparisonId === undefined ? 300_000 : 10_000),
+        ...(signal ? [signal] : []),
+      ]),
     })
 
     if (comparisonId !== undefined && response.status === 410) return { status: 'unavailable' }

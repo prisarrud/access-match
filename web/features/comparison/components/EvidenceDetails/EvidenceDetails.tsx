@@ -21,15 +21,6 @@ const locations = {
   entre_trajeto_e_patamar: 'entre o trajeto e o patamar',
 }
 
-const confirmations = {
-  route_continuity: 'Continuidade do trajeto da calçada até a porta de entrada.',
-  alternate_access: 'Existência de outro acesso sem degraus.',
-  ramp_slope: 'Inclinação da rampa.',
-  ramp_width: 'Largura livre da rampa.',
-  ramp_continuity: 'Ligação da rampa com o restante do trajeto.',
-  current_entrance_width: 'Medida atual do vão livre da porta de entrada.',
-} satisfies Record<CriterionResult['toConfirm'][number], string>
-
 function describePhoto(photo: Photo, criterion: CriterionResult['criterion']) {
   const element = criterion === 'degraus' ? 'degrau' : criterion === 'rampas' ? 'rampa' : null
   const observations = photo.observations.filter((observation) => observation.element === element)
@@ -58,69 +49,56 @@ export function EvidenceDetails({ result, property, catalogProperty, criterionLa
   const context = `${property.title} · ${criterionLabel}`
 
   return (
-    <div className={styles.evidence}>
-      {result.referenceIds.length > 0 && (
-        <details className={styles.details}>
-          <summary className={styles.summary} aria-label={`Ver evidências de ${context}`}>Ver evidências</summary>
-          <p className={styles.context}>{context}</p>
-          <ul className={styles.sources}>
-            {result.referenceIds.map((id) => {
-              const source = evidence.textSources.find((item) => item.source_id === id && item.property_id === property.propertyId)
-              if (source) {
-                const quotes = evidence.textual
-                  .filter((item) => item.source_id === id && item.criterion === result.criterion)
-                  .map((item) => item.quote)
-                const type = source.document_type && documentTypes[source.document_type]
-                const document = catalogProperty?.documents.find((item) => item.id === source.document_id)
-                const page = source.page === null ? '' : `Página ${source.page}`
-                const href = document?.url && `${document.url}${source.page === null ? '' : `#page=${source.page}`}`
+    <details className={styles.details}>
+      <summary className={styles.summary} aria-label={`Ver evidências de ${context}`}>Ver evidências</summary>
+      <p className={styles.context}>{context}</p>
+      <ul className={styles.sources}>
+        {result.referenceIds.map((id) => {
+          const source = evidence.textSources.find((item) => item.source_id === id && item.property_id === property.propertyId)
+          if (source) {
+            const quotes = evidence.textual
+              .filter((item) => item.source_id === id && item.criterion === result.criterion)
+              .map((item) => item.quote)
+            const type = source.document_type && documentTypes[source.document_type]
+            const document = catalogProperty?.documents.find((item) => item.id === source.document_id)
+            const page = source.page === null ? '' : `Página ${source.page}`
+            const href = document?.url && `${document.url}${source.page === null ? '' : `#page=${source.page}`}`
 
-                return (
-                  <li key={id} data-source-id={id} className={styles.source}>
-                    <p><strong>{document?.title ?? type ?? 'Anúncio'}</strong></p>
-                    {type && <p className={styles.metadata}>{[type, page].filter(Boolean).join(' · ')}</p>}
-                    {Array.from(new Set(quotes.length > 0 ? quotes : [source.text]), (quote) => (
-                      <blockquote key={quote}>{quote}</blockquote>
-                    ))}
-                    {type && (href ? (
-                      <p>
-                        <a href={href} target='_blank' rel='noopener' aria-label={`Abrir PDF de ${document?.title} (nova aba)`}>
-                          Abrir PDF (nova aba)
-                        </a>
-                      </p>
-                    ) : <p>PDF indisponível.</p>)}
-                  </li>
-                )
-              }
+            return (
+              <li key={id} data-source-id={id} className={styles.source}>
+                <p><strong>{document?.title ?? type ?? 'Anúncio'}</strong></p>
+                {type && <p className={styles.metadata}>{[type, page].filter(Boolean).join(' · ')}</p>}
+                {Array.from(new Set(quotes.length > 0 ? quotes : [source.text]), (quote) => (
+                  <blockquote key={quote}>{quote}</blockquote>
+                ))}
+                {type && (href ? (
+                  <p>
+                    <a href={href} target='_blank' rel='noopener' aria-label={`Abrir PDF de ${document?.title} (nova aba)`}>
+                      Abrir PDF (nova aba)
+                    </a>
+                  </p>
+                ) : <p>PDF indisponível.</p>)}
+              </li>
+            )
+          }
 
-              const photo = evidence.visual.find((item) => item.photo_id === id)
-              if (photo) {
-                const media = catalogProperty?.photos.find((item) => item.id === id)
-                return (
-                  <li key={id} data-source-id={id} className={styles.source}>
-                    <p><strong>Foto do acesso</strong></p>
-                    <EvidencePhoto url={media?.url ?? null} alt={media?.alt ?? ''} />
-                    {describePhoto(photo, result.criterion).map((description) => (
-                      <p key={description}>{description}</p>
-                    ))}
-                  </li>
-                )
-              }
+          const photo = evidence.visual.find((item) => item.photo_id === id)
+          if (photo) {
+            const media = catalogProperty?.photos.find((item) => item.id === id)
+            return (
+              <li key={id} data-source-id={id} className={styles.source}>
+                <p><strong>Foto do acesso</strong></p>
+                <EvidencePhoto url={media?.url ?? null} alt={media?.alt ?? ''} />
+                {describePhoto(photo, result.criterion).map((description) => (
+                  <p key={description}>{description}</p>
+                ))}
+              </li>
+            )
+          }
 
-              return <li key={id} data-source-id={id} className={styles.source}>Fonte indisponível ({id}).</li>
-            })}
-          </ul>
-        </details>
-      )}
-
-      {result.toConfirm.length > 0 && (
-        <div className={styles.pending}>
-          <p><strong>O que falta confirmar</strong></p>
-          <ul>
-            {result.toConfirm.map((item) => <li key={item}>{confirmations[item]}</li>)}
-          </ul>
-        </div>
-      )}
-    </div>
+          return <li key={id} data-source-id={id} className={styles.source}>Fonte indisponível ({id}).</li>
+        })}
+      </ul>
+    </details>
   )
 }

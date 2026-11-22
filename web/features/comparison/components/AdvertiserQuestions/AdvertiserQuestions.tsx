@@ -1,5 +1,6 @@
 'use client'
 
+import ui from '@/ui/shared.module.css'
 import { useEffect, useId, useRef, useState } from 'react'
 import { generateComparisonQuestions } from '../../services/generateComparisonQuestions/generateComparisonQuestions'
 import type { ComparisonRequest } from '../../types'
@@ -68,7 +69,7 @@ export function AdvertiserQuestions({ comparisonId, request, propertyId, propert
         <button
           ref={generateButton}
           type='button'
-          className='button button-secondary'
+          className={`${ui.button} ${ui.outline}`}
           aria-disabled={status === 'loading'}
           onClick={generate}
         >
@@ -81,7 +82,7 @@ export function AdvertiserQuestions({ comparisonId, request, propertyId, propert
       {status === 'unavailable' && (
         <>
           <p role='alert'>Esta comparação expirou. Execute uma nova análise para gerar perguntas atualizadas.</p>
-          <button ref={nextControl} type='submit' form='criterios' name='novaAnalise' value='1' className='button button-secondary'>
+          <button ref={nextControl} type='submit' form='criterios' name='novaAnalise' value='1' className={`${ui.button} ${ui.secondary}`}>
             Executar nova análise
           </button>
         </>
@@ -101,7 +102,7 @@ export function AdvertiserQuestions({ comparisonId, request, propertyId, propert
               setNotice('')
             }}
           />
-          <button type='button' className='button button-secondary' disabled={!message.trim()} onClick={copy}>
+          <button type='button' className={`${ui.button} ${ui.secondary}`} disabled={!message.trim()} onClick={copy}>
             Copiar mensagem
           </button>
         </>

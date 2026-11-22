@@ -1,0 +1,38 @@
+.band {
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  border-top: 1px solid rgb(96 55 145 / 0.16);
+  background: var(--accent-soft); border-radius: 1rem;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem 1.25rem;
+  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.meter {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.meter span {
+  width: 1.4rem;
+  height: 0.35rem;
+  border-radius: 1rem;
+  background: #9d85bc;
+}
+
+.meter span[data-filled="true"] {
+  background: var(--accent);
+}
+

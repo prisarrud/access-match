@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from langchain_core.documents import Document
 
 from api.app.comparison.rules import compare_ramp, compare_steps, compare_width
-from api.app.comparison.schemas import ComparisonEvidence, PropertyEvidence
+from api.app.comparison.schemas import ComparisonEvidence, PropertyEvidence, TextSearch
 from api.app.comparison.store import ComparisonStore
 from api.app.documents.extraction import EvidenceSource, ExtractionError, ExtractionResult, GroundedObservation
 from api.app.main import app
@@ -58,6 +58,20 @@ class ComparisonRulesTests(TestCase):
         ]))
         self.assertEqual(result.status, "a_confirmar")
         self.assertEqual(result.referenceIds, [])
+
+    def test_distinguishes_missing_measurements_from_missing_pdf_passages(self):
+        for retrieval, expected in (
+            ("no_documents", "é preciso medir o vão livre"),
+            ("no_results", "A busca nos PDFs não retornou trechos"),
+        ):
+            with self.subTest(retrieval=retrieval):
+                evidence = ComparisonEvidence(textSearches=[
+                    TextSearch(criterion="largura", retrieval=retrieval, extraction="no_results"),
+                ])
+                result = compare_width(50, evidence)
+                self.assertEqual(result.status, "a_confirmar")
+                self.assertIn(expected, result.justification)
+                self.assertIn("50 cm", result.justification)
 
     def test_listed_step_free_access_and_photographed_step_conflict(self):
         evidence = ComparisonEvidence(
@@ -145,6 +159,7 @@ class ComparisonEndpointTests(TestCase):
         first, second = response.json()["properties"]
         self.assertTrue(first["results"][0]["divergence"])
         self.assertEqual(second["results"][1]["status"], "a_confirmar")
+        self.assertIn("Execute uma nova análise", second["results"][1]["justification"])
         self.assertIn("residencial-oliveira-front", second["results"][0]["referenceIds"])
         self.assertEqual(second["evidence"]["textSources"][0]["source_id"], f"listing:{PROPERTY_B}")
         self.assertEqual({(issue["stage"], issue["kind"]) for issue in second["issues"]}, {
@@ -220,11 +235,12 @@ class ComparisonEndpointTests(TestCase):
             patch("api.app.comparison.service.analyze_property_photos", side_effect=visual) as photos,
         ):
             original = self.client.post("/comparisons", json={
-                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 75},
+                "propertyIds": PROPERTY_IDS, "criteria": {"minimumClearWidthCm": 50},
             })
             self.assertEqual(original.status_code, 200)
             comparison = original.json()
             first, second = comparison["properties"]
+            self.assertEqual(first["results"][0]["status"], "a_confirmar")
             self.assertEqual(second["results"][0]["status"], "atende")
             self.assertEqual(retrieval.await_count, 3)
             self.assertEqual(extraction.await_count, 6)

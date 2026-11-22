@@ -1,29 +1,15 @@
 .results {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-block-start: 1.5rem;
 }
 
-.property {
-  display: grid;
-  gap: 0.75rem;
-  padding: clamp(1rem, 3vw, 1.5rem);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 1.5rem;
-}
-
-.criteria {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-  padding-inline-start: 1.25rem;
-}
-
-.property h4 {
-  margin-block: 0;
-}
-
-.detail {
-  color: var(--muted);
+.announcement {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

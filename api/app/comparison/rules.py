@@ -40,6 +40,9 @@ def is_entrance_width(item: GroundedObservation) -> bool:
     )
 
 def compare_width(minimum_cm: float, evidence: ComparisonEvidence) -> CriterionResult:
+    minimum = Decimal(str(minimum_cm))
+    minimum_label = width_labels({minimum})
+
     widths = [
         (item, Decimal(str(item.value)) * WIDTH_FACTORS[item.unit])
         for item in evidence.textual
@@ -56,12 +59,12 @@ def compare_width(minimum_cm: float, evidence: ComparisonEvidence) -> CriterionR
 
     if len(measured) == 1:
         width = next(iter(measured))
-        meets_minimum = width >= Decimal(str(minimum_cm))
+        meets_minimum = width >= minimum
         comparison = "atende ao" if meets_minimum else "fica abaixo do"
 
         justification = (
             f"A vistoria mediu {width_labels({width})} de vão livre na porta de entrada, "
-            f"o que {comparison} mínimo de {width_labels({Decimal(str(minimum_cm))})}."
+            f"o que {comparison} mínimo de {minimum_label}."
         )
 
         if planned:
@@ -79,7 +82,19 @@ def compare_width(minimum_cm: float, evidence: ComparisonEvidence) -> CriterionR
     elif widths:
         justification = "A largura declarada precisa ser confirmada na porta de entrada."
     else:
-        justification = "As fontes analisadas não fornecem uma medida aplicável à porta de entrada."
+        search = next((item for item in evidence.textSearches if item.criterion == "largura"), None)
+        if search and (search.retrieval == "failed" or search.extraction == "failed"):
+            justification = (
+                f"A análise das fontes ficou incompleta. Execute uma nova análise para verificar o mínimo de {minimum_label}."
+            )
+        elif search and search.retrieval == "no_results":
+            justification = (
+                f"A busca nos PDFs não retornou trechos para verificar o mínimo de {minimum_label}."
+            )
+        else:
+            justification = (
+                f"Para verificar o mínimo de {minimum_label}, é preciso medir o vão livre da porta de entrada."
+            )
     return CriterionResult(
         criterion="largura", status="a_confirmar", justification=justification,
         referenceIds=references, toConfirm=["current_entrance_width"],

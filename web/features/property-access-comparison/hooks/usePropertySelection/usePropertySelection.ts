@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { selectionLimit } from '../../constants'
 
+const subscribe = () => () => {}
+
 export function usePropertySelection() {
+  const isReady = useSyncExternalStore(subscribe, () => true, () => false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   function toggleProperty(id: string) {
@@ -13,5 +16,5 @@ export function usePropertySelection() {
     })
   }
 
-  return { selectedIds, toggleProperty }
+  return { isReady, selectedIds, toggleProperty }
 }

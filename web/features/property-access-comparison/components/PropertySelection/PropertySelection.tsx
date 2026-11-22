@@ -6,7 +6,7 @@ import type { PropertySummary } from '../../types'
 import { PropertyCard } from '../PropertyCard'
 
 export function PropertySelection({ properties }: { properties: PropertySummary[] }) {
-  const { selectedIds, toggleProperty } = usePropertySelection()
+  const { isReady, selectedIds, toggleProperty } = usePropertySelection()
 
   return (
     <form action='/comparar' method='get'>
@@ -25,7 +25,7 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
                   <button
                     type='button'
                     className='button button-secondary'
-                    disabled={!selected && selectedIds.length === selectionLimit}
+                    disabled={!isReady || (!selected && selectedIds.length === selectionLimit)}
                     onClick={() => toggleProperty(property.id)}
                     aria-label={`${action}: ${property.title}`}
                   >
@@ -51,7 +51,9 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
             </div>
 
             <p role='status'>
-              <strong>{selectedIds.length} de {selectionLimit}</strong> imóveis selecionados
+              {isReady ? (
+                <><strong>{selectedIds.length} de {selectionLimit}</strong> imóveis selecionados</>
+              ) : 'Preparando a seleção…'}
             </p>
           </div>
           <button

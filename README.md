@@ -33,3 +33,11 @@ make setup
 ```bash
 make dev
 ```
+
+### Validate evaluation cases
+
+`make validate-evaluation` checks the cases, their expected results, and source references. See the [evaluation guide](evaluation/README.md) to add a case.
+
+```bash
+make validate-evaluation
+```

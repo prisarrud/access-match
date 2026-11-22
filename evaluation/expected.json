@@ -1,0 +1,647 @@
+{
+  "AM-01": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 78 cm.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-02": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 75 cm.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-03": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 80 cm.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-04": {
+    "edificio-cedro": [
+      {
+        "criterion": "largura",
+        "status": "atende",
+        "justification": "A vistoria mediu 0,78 m de vão livre (78 cm). O mínimo é 78 cm.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 0.78,
+            "unit": "m",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "cedro-vistoria",
+              "page": 1
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-05": {
+    "edificio-cedro": [
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 0,78 m de vão livre (78 cm). O mínimo é 79 cm.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 0.78,
+            "unit": "m",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "cedro-vistoria",
+              "page": 1
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-06": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 90 cm.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-07": {
+    "edificio-ipe": [
+      {
+        "criterion": "largura",
+        "status": "a_confirmar",
+        "justification": "O anúncio informa apenas a condição dos degraus. Falta medir o vão livre da porta.",
+        "references": [],
+        "toConfirm": [
+          "current_entrance_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ],
+    "edificio-imbuia": [
+      {
+        "criterion": "largura",
+        "status": "atende",
+        "justification": "A vistoria mediu 92 cm na porta de entrada da Imbuia. O mínimo é 90 cm.",
+        "references": [
+          {
+            "sourceId": "imbuia-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 92,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "imbuia-vistoria",
+              "page": 1
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-08": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 80 cm. O memorial previu 85 cm para a mesma porta.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          },
+          {
+            "sourceId": "residencial-oliveira-memorial",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          },
+          {
+            "value": 85,
+            "unit": "cm",
+            "nature": "especificacao_projeto",
+            "reference": {
+              "sourceId": "residencial-oliveira-memorial",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-09": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 75 cm. O memorial previu 85 cm para a mesma porta.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          },
+          {
+            "sourceId": "residencial-oliveira-memorial",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          },
+          {
+            "value": 85,
+            "unit": "cm",
+            "nature": "especificacao_projeto",
+            "reference": {
+              "sourceId": "residencial-oliveira-memorial",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-10": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "a_confirmar",
+        "justification": "O memorial prevê 85 cm na PE-01. Falta medir o vão atual.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-memorial",
+            "page": 2
+          }
+        ],
+        "toConfirm": [
+          "current_entrance_width"
+        ],
+        "measurements": [
+          {
+            "value": 85,
+            "unit": "cm",
+            "nature": "especificacao_projeto",
+            "reference": {
+              "sourceId": "residencial-oliveira-memorial",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-11": {
+    "residencial-oliveira": [
+      {
+        "criterion": "largura",
+        "status": "a_confirmar",
+        "justification": "O anúncio diz apenas que a porta é ampla. Falta medir o vão livre.",
+        "references": [
+          {
+            "sourceId": "listing:residencial-oliveira"
+          }
+        ],
+        "toConfirm": [
+          "current_entrance_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-12": {
+    "edificio-jatoba": [
+      {
+        "criterion": "largura",
+        "status": "a_confirmar",
+        "justification": "Os 95 cm são da porta do depósito. A porta de entrada não foi medida.",
+        "references": [
+          {
+            "sourceId": "jatoba-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [
+          "current_entrance_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-13": {
+    "edificio-ipe": [
+      {
+        "criterion": "degraus",
+        "status": "nao_atende",
+        "justification": "O anúncio declara entrada sem degraus. A foto mostra um degrau entre a calçada e o patamar desse acesso.",
+        "references": [
+          {
+            "sourceId": "listing:edificio-ipe"
+          },
+          {
+            "sourceId": "edificio-ipe-foto-frontal"
+          }
+        ],
+        "toConfirm": [
+          "alternate_access",
+          "route_continuity"
+        ],
+        "measurements": [],
+        "divergence": true
+      }
+    ]
+  },
+  "AM-14": {
+    "edificio-cedro": [
+      {
+        "criterion": "degraus",
+        "status": "atende",
+        "justification": "A vistoria cobre todo o percurso da calçada até a porta de entrada e registra ausência de degraus.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-15": {
+    "residencial-oliveira": [
+      {
+        "criterion": "degraus",
+        "status": "a_confirmar",
+        "justification": "A foto mostra apenas a porta e o patamar. Falta verificar o restante do percurso a partir da calçada.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-foto-porta"
+          }
+        ],
+        "toConfirm": [
+          "route_continuity",
+          "alternate_access"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-16": {
+    "residencial-oliveira": [
+      {
+        "criterion": "rampas",
+        "status": "atende",
+        "justification": "A foto mostra a superfície inclinada de acesso ao patamar. A conexão com a calçada está fora do quadro.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-foto-patamar"
+          }
+        ],
+        "toConfirm": [
+          "route_continuity",
+          "ramp_continuity",
+          "ramp_slope",
+          "ramp_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-17": {
+    "edificio-cedro": [
+      {
+        "criterion": "rampas",
+        "status": "nao_atende",
+        "justification": "A vistoria afirma que não há rampa em todo o percurso da calçada até a porta.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-18": {
+    "edificio-ipe": [
+      {
+        "criterion": "rampas",
+        "status": "a_confirmar",
+        "justification": "O anúncio fala em acesso sem degraus. Falta confirmar se existe uma rampa ao longo do percurso.",
+        "references": [],
+        "toConfirm": [
+          "route_continuity"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-19": {
+    "edificio-jatoba": [
+      {
+        "criterion": "degraus",
+        "status": "nao_atende",
+        "justification": "A vistoria registra dois degraus no trecho entre a calçada e o patamar.",
+        "references": [
+          {
+            "sourceId": "jatoba-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [
+          "alternate_access",
+          "route_continuity"
+        ],
+        "measurements": [],
+        "divergence": false
+      },
+      {
+        "criterion": "rampas",
+        "status": "atende",
+        "justification": "A vistoria registra uma rampa no acesso ao patamar. Falta confirmar sua conexão com o restante do percurso e suas dimensões.",
+        "references": [
+          {
+            "sourceId": "jatoba-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [
+          "route_continuity",
+          "ramp_continuity",
+          "ramp_slope",
+          "ramp_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      }
+    ]
+  },
+  "AM-20": {
+    "edificio-cedro": [
+      {
+        "criterion": "degraus",
+        "status": "atende",
+        "justification": "A vistoria cobre todo o percurso da calçada até a porta de entrada e registra ausência de degraus.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [],
+        "divergence": false
+      },
+      {
+        "criterion": "rampas",
+        "status": "nao_atende",
+        "justification": "A vistoria afirma que não há rampa em todo o percurso da calçada até a porta.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [],
+        "divergence": false
+      },
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 0,78 m de vão livre (78 cm). O mínimo é 80 cm.",
+        "references": [
+          {
+            "sourceId": "cedro-vistoria",
+            "page": 1
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 0.78,
+            "unit": "m",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "cedro-vistoria",
+              "page": 1
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ],
+    "residencial-oliveira": [
+      {
+        "criterion": "degraus",
+        "status": "a_confirmar",
+        "justification": "A foto mostra apenas a porta e o patamar. Falta verificar o restante do percurso a partir da calçada.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-foto-porta"
+          }
+        ],
+        "toConfirm": [
+          "route_continuity",
+          "alternate_access"
+        ],
+        "measurements": [],
+        "divergence": false
+      },
+      {
+        "criterion": "rampas",
+        "status": "atende",
+        "justification": "A foto mostra a superfície inclinada de acesso ao patamar. A conexão com a calçada está fora do quadro.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-foto-patamar"
+          }
+        ],
+        "toConfirm": [
+          "route_continuity",
+          "ramp_continuity",
+          "ramp_slope",
+          "ramp_width"
+        ],
+        "measurements": [],
+        "divergence": false
+      },
+      {
+        "criterion": "largura",
+        "status": "nao_atende",
+        "justification": "A vistoria mediu 78 cm de vão livre na porta PE-01. O mínimo é 80 cm. O memorial previu 85 cm para a mesma porta.",
+        "references": [
+          {
+            "sourceId": "residencial-oliveira-vistoria",
+            "page": 2
+          },
+          {
+            "sourceId": "residencial-oliveira-memorial",
+            "page": 2
+          }
+        ],
+        "toConfirm": [],
+        "measurements": [
+          {
+            "value": 78,
+            "unit": "cm",
+            "nature": "observacao_vistoria",
+            "reference": {
+              "sourceId": "residencial-oliveira-vistoria",
+              "page": 2
+            }
+          },
+          {
+            "value": 85,
+            "unit": "cm",
+            "nature": "especificacao_projeto",
+            "reference": {
+              "sourceId": "residencial-oliveira-memorial",
+              "page": 2
+            }
+          }
+        ],
+        "divergence": false
+      }
+    ]
+  }
+}

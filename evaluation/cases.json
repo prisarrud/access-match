@@ -1,0 +1,323 @@
+[
+  {
+    "id": "AM-01",
+    "scenario": "Vão medido igual ao mínimo",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 78
+    }
+  },
+  {
+    "id": "AM-02",
+    "scenario": "Vão medido acima do mínimo",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 75
+    }
+  },
+  {
+    "id": "AM-03",
+    "scenario": "Vão medido abaixo do mínimo",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 80
+    }
+  },
+  {
+    "id": "AM-04",
+    "scenario": "Conversão de metros no limite",
+    "inputs": [
+      {
+        "propertyId": "edificio-cedro",
+        "sourceIds": [
+          "cedro-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 78
+    }
+  },
+  {
+    "id": "AM-05",
+    "scenario": "Conversão de metros abaixo de um mínimo de 79 cm",
+    "inputs": [
+      {
+        "propertyId": "edificio-cedro",
+        "sourceIds": [
+          "cedro-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 79
+    }
+  },
+  {
+    "id": "AM-06",
+    "scenario": "Porta do depósito com 90 cm na mesma página da entrada",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 90
+    }
+  },
+  {
+    "id": "AM-07",
+    "scenario": "Medida de outro imóvel disponível no mesmo caso",
+    "inputs": [
+      {
+        "propertyId": "edificio-ipe",
+        "sourceIds": [
+          "listing:edificio-ipe"
+        ]
+      },
+      {
+        "propertyId": "edificio-imbuia",
+        "sourceIds": [
+          "imbuia-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 90
+    }
+  },
+  {
+    "id": "AM-08",
+    "scenario": "Memorial de 85 cm e vistoria de 78 cm com mínimo de 80 cm",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria",
+          "residencial-oliveira-memorial"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 80
+    }
+  },
+  {
+    "id": "AM-09",
+    "scenario": "Memorial e vistoria com mínimo de 75 cm",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-vistoria",
+          "residencial-oliveira-memorial"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 75
+    }
+  },
+  {
+    "id": "AM-10",
+    "scenario": "Projeto sem vistoria na entrada",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-memorial"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 80
+    }
+  },
+  {
+    "id": "AM-11",
+    "scenario": "Anúncio de porta ampla sem medida",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "listing:residencial-oliveira"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 75
+    }
+  },
+  {
+    "id": "AM-12",
+    "scenario": "Vistoria mede apenas a porta do depósito",
+    "inputs": [
+      {
+        "propertyId": "edificio-jatoba",
+        "sourceIds": [
+          "jatoba-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "minimumClearWidthCm": 90
+    }
+  },
+  {
+    "id": "AM-13",
+    "scenario": "Divergência entre anúncio e foto frontal",
+    "inputs": [
+      {
+        "propertyId": "edificio-ipe",
+        "sourceIds": [
+          "listing:edificio-ipe",
+          "edificio-ipe-foto-frontal"
+        ]
+      }
+    ],
+    "criteria": {
+      "stepFree": true
+    }
+  },
+  {
+    "id": "AM-14",
+    "scenario": "Registro do percurso completo sem degraus",
+    "inputs": [
+      {
+        "propertyId": "edificio-cedro",
+        "sourceIds": [
+          "cedro-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "stepFree": true
+    }
+  },
+  {
+    "id": "AM-15",
+    "scenario": "Foto parcial da porta e do patamar",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-foto-porta"
+        ]
+      }
+    ],
+    "criteria": {
+      "stepFree": true
+    }
+  },
+  {
+    "id": "AM-16",
+    "scenario": "Rampa visível com início fora do quadro",
+    "inputs": [
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-foto-patamar"
+        ]
+      }
+    ],
+    "criteria": {
+      "ramp": true
+    }
+  },
+  {
+    "id": "AM-17",
+    "scenario": "Vistoria cobre o percurso completo e registra ausência de rampa",
+    "inputs": [
+      {
+        "propertyId": "edificio-cedro",
+        "sourceIds": [
+          "cedro-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "ramp": true
+    }
+  },
+  {
+    "id": "AM-18",
+    "scenario": "Anúncio sem informação sobre rampa",
+    "inputs": [
+      {
+        "propertyId": "edificio-ipe",
+        "sourceIds": [
+          "listing:edificio-ipe"
+        ]
+      }
+    ],
+    "criteria": {
+      "ramp": true
+    }
+  },
+  {
+    "id": "AM-19",
+    "scenario": "Degraus e rampa registrados na mesma vistoria",
+    "inputs": [
+      {
+        "propertyId": "edificio-jatoba",
+        "sourceIds": [
+          "jatoba-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "stepFree": true,
+      "ramp": true
+    }
+  },
+  {
+    "id": "AM-20",
+    "scenario": "Comparação dos três critérios entre Cedro e Oliveira",
+    "inputs": [
+      {
+        "propertyId": "edificio-cedro",
+        "sourceIds": [
+          "cedro-vistoria"
+        ]
+      },
+      {
+        "propertyId": "residencial-oliveira",
+        "sourceIds": [
+          "residencial-oliveira-foto-porta",
+          "residencial-oliveira-foto-patamar",
+          "residencial-oliveira-memorial",
+          "residencial-oliveira-vistoria"
+        ]
+      }
+    ],
+    "criteria": {
+      "stepFree": true,
+      "ramp": true,
+      "minimumClearWidthCm": 80
+    }
+  }
+]

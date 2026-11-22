@@ -1,0 +1,43 @@
+{
+  "properties": [
+    {
+      "id": "edificio-cedro",
+      "title": "Edifício Cedro",
+      "description": "Apartamento de dois dormitórios com acesso pelo hall.",
+      "documents": [
+        {
+          "id": "cedro-vistoria",
+          "title": "Ficha de vistoria do Edifício Cedro",
+          "type": "vistoria",
+          "path": "cedro-vistoria.pdf"
+        }
+      ]
+    },
+    {
+      "id": "edificio-jatoba",
+      "title": "Edifício Jatobá",
+      "description": "Apartamento de dois dormitórios com acesso pelo hall.",
+      "documents": [
+        {
+          "id": "jatoba-vistoria",
+          "title": "Ficha de vistoria do Edifício Jatobá",
+          "type": "vistoria",
+          "path": "jatoba-vistoria.pdf"
+        }
+      ]
+    },
+    {
+      "id": "edificio-imbuia",
+      "title": "Edifício Imbuia",
+      "description": "Apartamento de dois dormitórios com acesso pelo hall.",
+      "documents": [
+        {
+          "id": "imbuia-vistoria",
+          "title": "Ficha de vistoria do Edifício Imbuia",
+          "type": "vistoria",
+          "path": "imbuia-vistoria.pdf"
+        }
+      ]
+    }
+  ]
+}

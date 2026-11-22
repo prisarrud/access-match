@@ -2,11 +2,12 @@ PYTHON ?= python3
 API_PYTHON := api/.venv/bin/python
 API_BASE_URL ?= http://127.0.0.1:8000
 
-.PHONY: help setup db dev prepare-photos
+.PHONY: help setup db dev prepare-photos validate-evaluation
 
 help:
 	@printf '%s\n' 'make setup  Install dependencies, download models, index PDFs, and prepare photos' \
 		'make prepare-photos  Analyze and cache photos for the demo catalog' \
+		'make validate-evaluation  Check evaluation cases and source references' \
 		'make dev    Start PostgreSQL, the API, and the frontend'
 
 setup:
@@ -34,6 +35,9 @@ db:
 
 prepare-photos:
 	$(API_PYTHON) -m api.app.photos.analysis $${PROPERTY_ID:+-- "$$PROPERTY_ID"}
+
+validate-evaluation:
+	$(API_PYTHON) -m evaluation.validate
 
 dev: db
 	@$(API_PYTHON) -m uvicorn api.app.main:app --reload & api_pid=$$!; \

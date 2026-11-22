@@ -1,0 +1,72 @@
+.evidence {
+  font-size: 0.875rem;
+}
+
+.details,
+.pending {
+  margin-block-start: 0.75rem;
+}
+
+.summary {
+  width: fit-content;
+  border-radius: 0.25rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 700;
+  padding-block: 0.375rem;
+}
+
+.summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.context,
+.metadata {
+  color: var(--muted);
+}
+
+.sources {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.source blockquote {
+  margin: 0;
+  padding-inline-start: 0.625rem;
+  border-inline-start: 2px solid var(--line);
+  white-space: pre-line;
+}
+
+.source a {
+  color: var(--accent);
+}
+
+.photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--accent-soft);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.photo img {
+  object-fit: contain;
+}
+
+.pending ul {
+  margin-block: 0.25rem 0;
+  padding-inline-start: 1.125rem;
+}

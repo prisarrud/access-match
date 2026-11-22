@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { propertyQueryParam } from '@/features/property-access-comparison'
+import { propertyQueryParam, type PropertySummary } from '@/features/property-access-comparison'
 import { submitComparison } from '../../services'
 import type { ComparisonSubmission } from '../../types'
 import { ComparisonTable } from '../ComparisonTable'
@@ -9,6 +9,7 @@ import styles from './ComparisonResults.module.css'
 type ComparisonResultsProps = {
   submission: Extract<ComparisonSubmission, { status: 'valid' }>
   comparisonId?: string
+  catalogProperties: PropertySummary[]
 }
 
 function RetryAnalysisButton() {
@@ -19,7 +20,7 @@ function RetryAnalysisButton() {
   )
 }
 
-export async function ComparisonResults({ submission, comparisonId }: ComparisonResultsProps) {
+export async function ComparisonResults({ submission, comparisonId, catalogProperties }: ComparisonResultsProps) {
   const outcome = await submitComparison(submission.request, comparisonId)
   if (outcome.status === 'unavailable') {
     return (
@@ -68,7 +69,11 @@ export async function ComparisonResults({ submission, comparisonId }: Comparison
 
       <ComparisonAnnouncement />
 
-      <ComparisonTable criteria={submission.request.criteria} properties={comparison.properties} />
+      <ComparisonTable
+        criteria={submission.request.criteria}
+        properties={comparison.properties}
+        catalogProperties={catalogProperties}
+      />
 
       {canRetryWidth && <RetryAnalysisButton />}
     </section>

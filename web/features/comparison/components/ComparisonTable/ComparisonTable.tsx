@@ -1,4 +1,6 @@
+import type { PropertySummary } from '@/features/property-access-comparison'
 import type { ComparisonCriteria, ComparisonResponse, CriterionResult } from '../../types'
+import { EvidenceDetails } from '../EvidenceDetails'
 import styles from './ComparisonTable.module.css'
 
 type Criterion = CriterionResult['criterion']
@@ -22,26 +24,9 @@ const widthStatusLabels = {
   nao_atende: 'Abaixo da medida solicitada',
 }
 
-const documentLabels = {
-  memorial: 'Memorial descritivo',
-  vistoria: 'Ficha de vistoria',
-}
-
-function describeSources(evidence: PropertyResult['evidence']) {
-  return new Map([
-    ...evidence.textSources.map((source) => {
-      const title = source.document_type ? documentLabels[source.document_type] : 'Anúncio'
-      return [source.source_id, source.page === null ? title : `${title}, página ${source.page}`] as const
-    }),
-    ...evidence.visual.map((photo) => (
-      [photo.photo_id, `Foto: ${photo.source_path.split('/').at(-1)}`] as const
-    )),
-  ])
-}
-
 function AnalysisIssues({
-  issues, sources,
-}: { issues: PropertyResult['issues'], sources: Map<string, string> }) {
+  issues, photos,
+}: { issues: PropertyResult['issues'], photos: Map<string, string> }) {
   return (
     <div className={styles.issues}>
       <p><strong>Falha na análise</strong></p>
@@ -49,7 +34,7 @@ function AnalysisIssues({
         {issues.map((issue, index) => (
           <li key={index}>
             {issue.message}
-            {issue.photoId && ` ${sources.get(issue.photoId) ?? issue.photoId}.`}
+            {issue.photoId && ` ${photos.get(issue.photoId) ?? issue.photoId}.`}
           </li>
         ))}
       </ul>
@@ -58,8 +43,8 @@ function AnalysisIssues({
 }
 
 function ComparisonCell({
-  criterion, property, sources,
-}: { criterion: Criterion, property: PropertyResult, sources: Map<string, string> }) {
+  criterion, property, photos, catalogProperty,
+}: { criterion: Criterion, property: PropertyResult, photos: Map<string, string>, catalogProperty?: PropertySummary }) {
   const result = property.results.find((item) => item.criterion === criterion)
   const issues = property.issues.filter((issue) => issue.criterion === criterion)
   const labels = criterion === 'largura' ? widthStatusLabels : statusLabels
@@ -75,28 +60,26 @@ function ComparisonCell({
 
           <p>{result.justification}</p>
 
-          {result.referenceIds.length > 0 && (
-            <div className={styles.sources}>
-              <p>Fontes</p>
-              <ul>
-                {result.referenceIds.map((id) => (
-                  <li key={id} data-source-id={id}>{sources.get(id) ?? id}</li>
-                ))}
-              </ul>
-            </div>
+          {(result.referenceIds.length > 0 || result.toConfirm.length > 0) && (
+            <EvidenceDetails
+              result={result}
+              property={property}
+              catalogProperty={catalogProperty}
+              criterionLabel={criterionLabels[criterion]}
+            />
           )}
         </>
       )}
 
-      {issues.length > 0 && <AnalysisIssues issues={issues} sources={sources} />}
+      {issues.length > 0 && <AnalysisIssues issues={issues} photos={photos} />}
       {!result && issues.length === 0 && <p>Resultado indisponível para este critério.</p>}
     </td>
   )
 }
 
 export function ComparisonTable({
-  criteria, properties,
-}: { criteria: ComparisonCriteria, properties: ComparisonResponse['properties'] }) {
+  criteria, properties, catalogProperties,
+}: { criteria: ComparisonCriteria, properties: ComparisonResponse['properties'], catalogProperties: PropertySummary[] }) {
   const rows: Criterion[] = []
   if (criteria.stepFree) rows.push('degraus')
   if (criteria.ramp) rows.push('rampas')
@@ -104,7 +87,8 @@ export function ComparisonTable({
 
   const columns = properties.map((property) => ({
     property,
-    sources: describeSources(property.evidence),
+    catalogProperty: catalogProperties.find((item) => item.id === property.propertyId),
+    photos: new Map(property.evidence.visual.map((photo) => [photo.photo_id, photo.source_path.split('/').at(-1) ?? photo.photo_id])),
     generalIssues: property.issues.filter((issue) => issue.criterion === null),
   }))
 
@@ -133,8 +117,14 @@ export function ComparisonTable({
                     </span>
                   )}
                 </th>
-                {columns.map(({ property, sources }) => (
-                  <ComparisonCell key={property.propertyId} criterion={criterion} property={property} sources={sources} />
+                {columns.map(({ property, catalogProperty, photos }) => (
+                  <ComparisonCell
+                    key={property.propertyId}
+                    criterion={criterion}
+                    property={property}
+                    catalogProperty={catalogProperty}
+                    photos={photos}
+                  />
                 ))}
               </tr>
             ))}
@@ -142,11 +132,11 @@ export function ComparisonTable({
         </table>
       </div>
 
-      {columns.map(({ property, sources, generalIssues }) => (
+      {columns.map(({ property, photos, generalIssues }) => (
         generalIssues.length > 0 && (
           <div key={property.propertyId} className={styles.propertyIssues}>
             <h3>{property.title}</h3>
-            <AnalysisIssues issues={generalIssues} sources={sources} />
+            <AnalysisIssues issues={generalIssues} photos={photos} />
           </div>
         )
       ))}

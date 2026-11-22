@@ -56,7 +56,7 @@ export async function ComparisonSelection({ searchParams }: ComparisonSelectionP
             {comparisonId === undefined ? 'Analisando as fontes da comparação…' : 'Atualizando a comparação…'}
           </p>
         }>
-          <ComparisonResults submission={submission} comparisonId={comparisonId} />
+          <ComparisonResults submission={submission} comparisonId={comparisonId} catalogProperties={[first, second]} />
         </Suspense>
       )}
     </>

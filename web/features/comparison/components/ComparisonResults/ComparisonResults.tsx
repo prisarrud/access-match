@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { propertyQueryParam, type PropertySummary } from '@/features/property-access-comparison'
 import { submitComparison } from '../../services'
 import type { ComparisonSubmission } from '../../types'
+import { AdvertiserQuestions } from '../AdvertiserQuestions'
 import { ComparisonTable } from '../ComparisonTable'
 import { ComparisonAnnouncement } from './ComparisonAnnouncement'
 import styles from './ComparisonResults.module.css'
@@ -62,6 +63,9 @@ export async function ComparisonResults({ submission, comparisonId, catalogPrope
     property.results.some((result) => result.criterion === 'largura' && result.status === 'a_confirmar') &&
     property.issues.some((issue) => issue.criterion === 'largura')
   ))
+  const propertiesWithPending = comparison.properties.filter((property) => (
+    property.results.some((result) => result.toConfirm.length > 0)
+  ))
 
   return (
     <section className={styles.results} aria-labelledby='comparison-result-title'>
@@ -76,6 +80,21 @@ export async function ComparisonResults({ submission, comparisonId, catalogPrope
       />
 
       {canRetryWidth && <RetryAnalysisButton />}
+
+      {propertiesWithPending.length > 0 && (
+        <section className={styles.questions} aria-labelledby='comparison-questions-title'>
+          <h3 id='comparison-questions-title'>Perguntas ao anunciante</h3>
+          {propertiesWithPending.map((property) => (
+            <AdvertiserQuestions
+              key={JSON.stringify([comparison.comparisonId, submission.request, property.propertyId])}
+              comparisonId={comparison.comparisonId}
+              request={submission.request}
+              propertyId={property.propertyId}
+              propertyTitle={property.title}
+            />
+          ))}
+        </section>
+      )}
     </section>
   )
 }

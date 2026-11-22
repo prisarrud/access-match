@@ -4,6 +4,8 @@ from ..documents.extraction import Criterion, EvidenceSource, GroundedObservatio
 from ..photos.analysis import Confirmation, PhotoAnalysis
 from ..properties.schemas import NonBlankText
 
+PendingConfirmation = Confirmation | Literal["current_entrance_width"]
+
 
 class ComparisonCriteria(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -42,6 +44,28 @@ class ComparisonRequest(BaseModel):
         return self
 
 
+class QuestionsRequest(ComparisonRequest):
+    propertyId: NonBlankText
+
+    @model_validator(mode="after")
+    def validate_selected_property(self) -> Self:
+        if self.propertyId not in self.propertyIds:
+            raise ValueError("Selecione um imóvel desta comparação.")
+        return self
+
+
+class SuggestedQuestion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pending: PendingConfirmation
+    question: NonBlankText = Field(max_length=280)
+
+
+class QuestionsResponse(BaseModel):
+    propertyId: str
+    questions: list[SuggestedQuestion]
+
+
 class AnalysisIssue(BaseModel):
     stage: Literal["retrieval", "extraction", "visual"]
     kind: Literal["infrastructure", "analysis", "source_file"]
@@ -69,7 +93,7 @@ class CriterionResult(BaseModel):
     justification: str
     referenceIds: list[str] = Field(default_factory=list)
     divergence: bool = False
-    toConfirm: list[Confirmation | Literal["current_entrance_width"]] = Field(default_factory=list)
+    toConfirm: list[PendingConfirmation] = Field(default_factory=list)
 
 
 class PropertyEvidence(BaseModel):

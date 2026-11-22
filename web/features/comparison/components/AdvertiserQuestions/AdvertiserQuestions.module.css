@@ -1,0 +1,38 @@
+.property {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  min-inline-size: 0;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.property h4 {
+  margin: 0;
+}
+
+.property [aria-disabled='true'] {
+  cursor: progress;
+}
+
+.property [role='status']:empty {
+  position: absolute;
+}
+
+.message {
+  inline-size: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font: inherit;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.message:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}

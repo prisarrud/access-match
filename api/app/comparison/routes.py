@@ -1,11 +1,16 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from ..properties.schemas import PropertyCatalog
-from .schemas import ComparisonRequest, ComparisonResponse
+from .questions import QuestionsError, generate_questions
+from .schemas import ComparisonRequest, ComparisonResponse, QuestionsRequest, QuestionsResponse
 from .service import calculate_comparison, collect_comparison_evidence
-from .store import ComparisonStore
+from .store import ActiveComparison, ComparisonStore
+
+logger = logging.getLogger(__name__)
 
 class ComparisonRoute(APIRoute):
     def get_route_handler(self):
@@ -47,17 +52,38 @@ async def create_comparison(payload: ComparisonRequest, request: Request) -> Com
     return calculate_comparison(comparison_id, evidence, payload.criteria)
 
 
-@router.post("/{comparison_id}/recalculate")
-async def recalculate_comparison(
-    comparison_id: str, payload: ComparisonRequest, request: Request,
-) -> ComparisonResponse:
-    store: ComparisonStore = request.app.state.comparisons
-
+def require_active_comparison(
+    store: ComparisonStore, comparison_id: str, payload: ComparisonRequest,
+) -> ActiveComparison:
     active = store.get(comparison_id)
 
     if active is None or tuple(item.propertyId for item in active.properties) != payload.propertyIds:
         raise HTTPException(
             status_code=410, detail="Esta análise expirou ou não está disponível para estes imóveis.",
         )
+    return active
+
+
+@router.post("/{comparison_id}/recalculate")
+async def recalculate_comparison(
+    comparison_id: str, payload: ComparisonRequest, request: Request,
+) -> ComparisonResponse:
+    active = require_active_comparison(request.app.state.comparisons, comparison_id, payload)
 
     return calculate_comparison(comparison_id, active.properties, payload.criteria)
+
+
+@router.post("/{comparison_id}/questions")
+async def create_questions(comparison_id: str, payload: QuestionsRequest, request: Request) -> QuestionsResponse:
+    store: ComparisonStore = request.app.state.comparisons
+    active = require_active_comparison(store, comparison_id, payload)
+    property_item = next(item for item in active.properties if item.propertyId == payload.propertyId)
+
+    try:
+        questions = await generate_questions(property_item, payload.criteria)
+    except QuestionsError as exc:
+        logger.warning("Question generation failed for %s", property_item.propertyId, exc_info=True)
+        raise HTTPException(status_code=503, detail="Não foi possível gerar as perguntas.") from exc
+
+    require_active_comparison(store, comparison_id, payload)
+    return QuestionsResponse(propertyId=property_item.propertyId, questions=questions)

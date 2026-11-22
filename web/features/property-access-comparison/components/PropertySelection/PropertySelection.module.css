@@ -1,7 +1,29 @@
+@media (min-width: 44rem) {
+  .catalogGrid { --property-columns: 2; }
+}
+
+@media (min-width: 65rem) {
+  .catalogGrid { --property-columns: 3; }
+}
+
 .band {
-  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 1;
+  padding-block-end: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgb(96 55 145 / 0.16);
-  background: var(--accent-soft); border-radius: 1rem;
+  background: var(--accent-soft);
+}
+
+.clearance {
+  block-size: calc(5.125rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 42rem) {
+  .clearance {
+    block-size: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .bar {
@@ -10,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.9rem 1.25rem;
-  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+  padding-block: 1rem;
 }
 
 .summary {

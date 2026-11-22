@@ -4,7 +4,7 @@ import ui from '@/ui/shared.module.css'
 import styles from './PropertySelection.module.css'
 import layout from '../PropertyGrid.module.css'
 import { useSearchParams } from 'next/navigation'
-import type { SubmitEvent } from 'react'
+import { useEffect, useRef, type SubmitEvent } from 'react'
 import { propertyQueryParam, selectionLimit } from '../../constants'
 import type { PropertySummary } from '../../types'
 import { PropertyCard } from '../PropertyCard'
@@ -21,6 +21,22 @@ function toggleProperty(ids: string[], id: string) {
 export function PropertySelection({ properties }: { properties: PropertySummary[] }) {
   const params = useSearchParams()
   const propertyIds = new Set(properties.map((property) => property.id))
+  const bandRef = useRef<HTMLDivElement>(null)
+  const clearanceRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const band = bandRef.current
+    const clearance = clearanceRef.current
+    if (!band || !clearance) return
+
+    const reserveSpace = () => {
+      clearance.style.blockSize = `${band.getBoundingClientRect().height}px`
+    }
+    reserveSpace()
+    const observer = new ResizeObserver(reserveSpace)
+    observer.observe(band, { box: 'border-box' })
+    return () => observer.disconnect()
+  }, [])
 
   function readSelection(query: Pick<URLSearchParams, 'getAll'>) {
     return [...new Set(query.getAll(propertyQueryParam))]
@@ -42,7 +58,7 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
 
   return (
     <>
-      <ul className={layout.grid} role='list'>
+      <ul className={`${ui.container} ${layout.grid} ${styles.catalogGrid}`} role='list'>
         {properties.map((property) => {
           const selected = selectedIds.includes(property.id)
           const action = selected ? 'Remover da seleção' : 'Selecionar imóvel'
@@ -79,8 +95,10 @@ export function PropertySelection({ properties }: { properties: PropertySummary[
         })}
       </ul>
 
-      <div className={styles.band}>
-        <form action='/comparar' method='get' className={styles.bar}>
+      <div ref={clearanceRef} className={styles.clearance} aria-hidden='true' />
+
+      <div ref={bandRef} className={styles.band}>
+        <form action='/comparar' method='get' className={`${ui.container} ${styles.bar}`}>
           <PropertyInputs ids={selectedIds} />
           <div className={styles.summary}>
             <div className={styles.meter} aria-hidden='true'>

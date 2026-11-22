@@ -77,8 +77,7 @@
 }
 
 .catalog {
-  width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), 65rem);
-  margin-inline: auto;
+  --container-max-width: 65rem;
   padding-block: clamp(1.75rem, 4vw, 3rem);
 }
 .heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; margin-bottom: 1.25rem; }

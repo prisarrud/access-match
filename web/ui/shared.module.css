@@ -1,4 +1,7 @@
-.container { width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), 72rem); margin-inline: auto; }
+.container {
+  width: min(calc(100% - 2 * clamp(1rem, 3vw, 2rem)), var(--container-max-width, 72rem));
+  margin-inline: auto;
+}
 .notice { padding: 1.2rem 1.4rem; background: var(--accent-soft); border: 1px solid var(--line); border-radius: 1rem; }
 
 .button {

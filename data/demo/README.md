@@ -1,6 +1,6 @@
 # Demo data
 
-`properties.json` contains two fictional properties in Porto Alegre, Brazil. Each property includes the wording of its demo listing. The photos are synthetic. Design specifications describe the planned features, and inspection reports record measurements and observations from the stated visit date.
+`properties.json` contains six fictional properties in Porto Alegre, Brazil. Each property includes the wording of its demo listing. The photos are synthetic. Design specifications describe the planned features, and inspection reports record measurements and observations from the stated visit date.
 
 ## Sources
 
@@ -12,6 +12,10 @@
 | B · Residencial Oliveira | [Door photo](property-b/porta-entrada.jpg) and [landing photo](property-b/patamar-entrada.jpg) | Show the door and the area immediately around it. The start of the route from the sidewalk is outside the frame. |
 | B · Residencial Oliveira | [Design specification](property-b/memorial-descritivo.pdf), p. 2, section 3.1 | Specifies an 85 cm clear opening for the lobby entrance door (PE-01) on April 18, 2023. |
 | B · Residencial Oliveira | [Inspection report](property-b/ficha-vistoria.pdf), p. 2, section 3.1 | Records a measured clear opening of 78 cm for the same door (PE-01) on October 12, 2026. |
+| C · Edifício Jacarandá | [Listing](property-c/anuncio.md), [entrance photo](property-c/entrada-principal.jpg) and [inspection report](property-c/ficha-vistoria.pdf), p. 1 | The inspection documents a continuous, step-free route from the sidewalk to the entrance door. |
+| D · Residencial Manacá | [Listing](property-d/anuncio.md) and [ramp photo](property-d/rampa-parcial.jpg) | Show the upper part of the ramp. Its connection to the sidewalk remains to be confirmed. |
+| E · Edifício Araucária | [Listing](property-e/anuncio.md), [door photo](property-e/porta-entrada.jpg) and [design specification](property-e/memorial-descritivo.pdf), p. 1 | The design specifies a 90 cm clear opening for the main entrance door. The current opening remains to be measured. |
+| F · Residencial Cedro | [Listing](property-f/anuncio.md) and [entrance photo](property-f/entrada-principal.jpg) | The listing describes a step-free side entrance. The photo shows a step at the main entrance. |
 
 ## Add a property
 
@@ -49,5 +53,18 @@ The photos were created with the integrated image generation tool. The Edifício
 **residencial-oliveira-foto-patamar**
 
 > Use case: photorealistic-natural. Use the reference as the exact fictional Residencial Oliveira building. Create one realistic landscape smartphone listing photograph, taken at an oblique angle from near the top of the concrete approach and pointing toward the same closed two-panel charcoal-framed glazed lobby door. Keep the same charcoal stucco recess, pale tiled landing and gray metal handrail of the reference. Show the entire doorway, the landing, and only a short upper portion of the sloped concrete and rail in the foreground, cropped as they continue past the image edge. Keep the bottom of the incline, its connection to the sidewalk, the street and any alternate route fully out of view. Natural overcast daylight. No people, ruler, numbers, signs, lettering, watermarks or collage.
+
+**Jacarandá, Manacá, Araucária and Cedro**
+
+The integrated image generation tool used the following prompt for each property, with its name and scene substituted.
+
+> Use case photorealistic-natural. One candid landscape 4:3 real estate listing photograph of the fictional {name} apartment building in Porto Alegre, Brazil. {scene}. Frame the base of the door, threshold, and all relevant visible floor details in the central lower half with generous side margins for horizontal card crops. Daylight, ordinary Brazilian residential architecture, realistic materials. No people, captions, signs, logos or text. Single photo, not a collage.
+
+| Name | Scene |
+| --- | --- |
+| Jacarandá | light beige stucco, dark metal glass door, absolutely continuous level gray paved route from public sidewalk to flush threshold, no stairs or ramp, wide view with pavement foreground |
+| Manacá | muted yellow facade, photograph close on a straight sloped concrete ramp with dark metal handrails leading to the landing and glass entrance door, lower starting point of ramp and the public sidewalk are outside the shot, visibly sloping ramp and top landing within frame |
+| Araucária | blue gray facade, slightly angled view of closed wooden main entrance door, doorway and full stone threshold clearly visible with exterior pavement, no measuring devices or dimensions |
+| Cedro | red brick facade, dark green main entrance door on a landing raised by exactly one distinct concrete step spanning the entry; show step nosing and sidewalk under it, side entrance outside shot |
 
 </details>

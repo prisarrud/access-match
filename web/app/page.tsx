@@ -19,14 +19,14 @@ export default function Home() {
         </div>
       </header>
       <section className={styles.catalog} aria-labelledby='catalog-title'>
-        <div className={styles.heading}>
+        <div className={`${ui.container} ${styles.heading}`}>
           <h2 id='catalog-title'>Catálogo de imóveis</h2>
 
           <p>Dados fictícios</p>
         </div>
 
         <Suspense
-          fallback={<p className={ui.notice} role='status'>Carregando imóveis…</p>}
+          fallback={<p className={`${ui.container} ${ui.notice}`} role='status'>Carregando imóveis…</p>}
         >
           <PropertyCatalog />
         </Suspense>

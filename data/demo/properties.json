@@ -45,6 +45,74 @@
           "path": "property-b/ficha-vistoria.pdf"
         }
       ]
+    },
+    {
+      "id": "edificio-jacaranda",
+      "title": "Anúncio do Edifício Jacarandá",
+      "description": "Apartamento de dois dormitórios no bairro Menino Deus, em Porto Alegre (RS).\n\nO hall de entrada é acessado pela fachada principal.\n",
+      "photos": [
+        {
+          "id": "edificio-jacaranda-foto-acesso",
+          "path": "property-c/entrada-principal.jpg",
+          "alt": "Foto sintética da entrada principal do Edifício Jacarandá. A calçada, o piso do acesso e a soleira aparecem no mesmo enquadramento."
+        }
+      ],
+      "documents": [
+        {
+          "id": "edificio-jacaranda-vistoria",
+          "title": "Ficha de vistoria do Edifício Jacarandá",
+          "type": "vistoria",
+          "date": "2026-10-16",
+          "path": "property-c/ficha-vistoria.pdf"
+        }
+      ]
+    },
+    {
+      "id": "residencial-manaca",
+      "title": "Anúncio do Residencial Manacá",
+      "description": "Apartamento de dois dormitórios no bairro Santana, em Porto Alegre (RS).\n\nA galeria mostra o trecho da rampa próximo ao hall.\n",
+      "photos": [
+        {
+          "id": "residencial-manaca-foto-acesso",
+          "path": "property-d/rampa-parcial.jpg",
+          "alt": "Foto sintética da parte superior da rampa e da entrada do Residencial Manacá. O início do percurso junto à calçada está fora do quadro."
+        }
+      ],
+      "documents": []
+    },
+    {
+      "id": "edificio-araucaria",
+      "title": "Anúncio do Edifício Araucária",
+      "description": "Apartamento de um dormitório no bairro Petrópolis, em Porto Alegre (RS).\n\nO memorial descreve a porta principal de entrada. Consulte a medida atual com o anunciante.\n",
+      "photos": [
+        {
+          "id": "edificio-araucaria-foto-acesso",
+          "path": "property-e/porta-entrada.jpg",
+          "alt": "Foto sintética da porta principal fechada do Edifício Araucária, com a soleira e o piso visíveis."
+        }
+      ],
+      "documents": [
+        {
+          "id": "edificio-araucaria-memorial",
+          "title": "Memorial descritivo do Edifício Araucária",
+          "type": "memorial",
+          "date": "2024-03-08",
+          "path": "property-e/memorial-descritivo.pdf"
+        }
+      ]
+    },
+    {
+      "id": "residencial-cedro",
+      "title": "Anúncio do Residencial Cedro",
+      "description": "Apartamento de dois dormitórios no bairro Tristeza, em Porto Alegre (RS).\n\nO anúncio informa que há uma entrada lateral sem degraus, pelo corredor à direita da fachada. A foto mostra a entrada principal.\n",
+      "photos": [
+        {
+          "id": "residencial-cedro-foto-acesso",
+          "path": "property-f/entrada-principal.jpg",
+          "alt": "Foto sintética da entrada principal do Residencial Cedro. Um degrau separa a calçada do patamar da porta. A entrada lateral está fora do quadro."
+        }
+      ],
+      "documents": []
     }
   ]
 }
